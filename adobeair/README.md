@@ -1,138 +1,126 @@
 
 #TapIt AIR Native Extension Plugin
-##Introduction
-This is an Air Native Extension (ane) built for TapIt.
+This is an Android AIR Native Extension (ane) built for TapIt Ads and ActionScript.
+There are three types of ads:
 
-##Special note regarding debuging and testing via your IDE.
-While this Native Extension is for Android, you must debug or run to a connected Andorid device or emulator.
-If you attempt to debug or run via your IDE, you will recieve an error message like so:
+* Banner
+* AdPrompt
+* Full Screen
 
-	ArgumentError: Error #3500: The extension context does not have a method with the name addBanner.
-		at flash.external::ExtensionContext/_call()
-		at flash.external::ExtensionContext/call()
+##Installation
 
-##AIR Native Extension Installation
+###Create an AIR mobile project for Android.
+![Create new AIR mobile project](https://raw.github.com/tapit/TapIt-Android-SDK-Source/master/adobeair/doc/createMobileProject.PNG)
 
-Create an AIR mobile project for Android.
+###Add the TapItAir.ane to your project build path.
 
-![Create new AIR mobile project](https://raw.github.com/MatthewValverde/TapItAirNativeExtension/master/doc/createMobileProject.PNG)
+  Located under project - properties - build path - Native Extension
 
-Add the TapItAir.ane to your project build path.
+![Create new AIR mobile project](https://raw.github.com/tapit/TapIt-Android-SDK-Source/master/adobeair/doc/addAne.PNG)
 
-![Create new AIR mobile project](https://raw.github.com/MatthewValverde/TapItAirNativeExtension/master/doc/addAne.PNG)
-
-For example: project - properties - build path - Native Extensions
-
-
-The TapItAir native extension requires these permissions and a TapIt Android Activity to run:
+###Check the required permissions.
+  
+  The TapItAir native extension requires specific permissions to run:
 
 * android.permission.INTERNET
 * android.permission.ACCESS_NETWORK_STATE
 * android.permission.READ_PHONE_STATE
 
-![Create new AIR mobile project](https://raw.github.com/MatthewValverde/TapItAirNativeExtension/master/doc/permissions.PNG)
+![Create new AIR mobile project](https://raw.github.com/tapit/TapIt-Android-SDK-Source/master/adobeair/doc/permissions.PNG)
 
-The permisions and Activity must be located in the android manifest for the AIR application.
+###Add Activity to Android manifest:
 
-The Andorid manifest is loacted in your project <project_name>-app.xml: 
+  The TapItAir native extension also requires a TapIt Android activity to be manually written to your project-app.xml:
+
+  The activity must be located within the Android manifest tags for the AIR application.
+
+  The android manifest tags are located in your projec -app.xml:
 
 	<android>
-		<manifestAdditions>
+		<manifestAdditions><![CDATA[
 			<manifest>
-	
-			</manifest>
-		</manifestAdditions>
+			   </manifest>
+		]]></manifestAdditions>
 	</android>
-	
-within the manifest tags add:
 
-	<uses-permission android:name="android.permission.INTERNET"></uses-permission>
-	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"></uses-permission>
-	<uses-permission android:name="android.permission.READ_PHONE_STATE"></uses-permission>
-			
-and the activity:
-			
+  within the manifest-- tags add the activity:
+  
 	<application>
 		<activity android:name="com.tapit.adview.AdActivity" android:configChanges="keyboard|keyboardHidden|orientation"/>
 	</application>
-	
-To finally appear as:
 
+  If you choose not to check the permissions during setup-- The permissions must be manually entered into the android manifest for the AIR application.
+  
+	<uses-permission android:name="android.permission.INTERNET"></uses-permission>
+	<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"></uses-permission>
+	<uses-permission android:name="android.permission.READ_PHONE_STATE"></uses-permission>
+	
+  Within the manifest tags to finally appear as:
+  
 	<android>
-        <colorDepth>16bit</colorDepth>
-        <manifestAdditions><![CDATA[
+		<manifestAdditions><![CDATA[
 			<manifest android:installLocation="auto">
-			    
-			    <uses-permission android:name="android.permission.INTERNET"></uses-permission>
+				<uses-permission android:name="android.permission.INTERNET"></uses-permission>
 				<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"></uses-permission>
 				<uses-permission android:name="android.permission.READ_PHONE_STATE"></uses-permission>
-			    		
 				<application>
-				     <activity android:name="com.tapit.adview.AdActivity" android:configChanges="keyboard|keyboardHidden|orientation"/>
+					 <activity android:name="com.tapit.adview.AdActivity" android:configChanges="keyboard|keyboardHidden|orientation"/>
 				</application>
-				
 			</manifest>
 		]]></manifestAdditions>
-    </android>
+	</android>
+	
 	
 	
 ##ActionScript Usage
 
-There can only be one instance of any of the availble ad options.
-
-You can add 1 banner, 1 ad alert and 1 full screen add-- at the same time, but you are unable to add multiple instances of any ad option.  
-i.e.-- not 2+ banners, 2+ ad alerts, or 2+ fullscreen ads.
-
-
-####Banner example:
+####Add Banner to the bottom of your mobile application.
 
 	package
 	{
 		import flash.display.Sprite;
 		import com.tapit.air.TapItAir;
-	
+
 		public class MyTapItApp extends Sprite
 		{
 			public function MyTapItApp()
-			{		
+			{       
 				TapItAir.addBanner();
 			}
 		}
 	}
-	
-	
-####Removing Banner example:
 
-	package
-	{
-		import flash.display.Sprite;
-		import com.tapit.air.TapItAir;
-	
-		public class MyTapItApp extends Sprite
-		{
-			public function MyTapItApp()
-			{		
-				TapItAir.removeBanner();
-			}
-		}
-	}
-		
-		
-####Example for Banner sizing, position and zone:
+#####Example of Banner sizing, position and zone:
 
 	package
 	{
 		import flash.display.Sprite;
 		import com.tapit.air.TapItAir;
 		import com.tapit.air.BannerSizes;
-	
+
 		public class MyTapItApp extends Sprite
 		{
 			public function MyTapItApp()
-			{		
-				TapItAir.addBanner(BannerSizes.IPHONE_BANNER, "top", "7979"); // size 320 x 50; posistion on top; publisher zone = 7979.
-				
+			{       
+				TapItAir.addBanner(BannerSizes.IPHONE_BANNER, "top", "7979");
+			// size 320 x 50;   position on top; publisher zone = 7979.
 				//TapItAir.addBanner(BannerSizes.AUTOSIZE_AD, "bottom", "7979"); // default
+			}
+		}
+	}
+
+####Removing the Banner from mobile application:
+
+	package
+	{
+		import flash.display.Sprite;
+		import com.tapit.air.TapItAir;
+
+		public class MyTapItApp extends Sprite
+		{
+			public function MyTapItApp()
+			{       
+				TapItAir.removeBanner();
 			}
 		}
 	}
@@ -147,7 +135,7 @@ i.e.-- not 2+ banners, 2+ ad alerts, or 2+ fullscreen ads.
 * BannerSizes.SMALL_BANNER = 120x20
 	
 	
-####Ad Alert example:
+####Add an AdPrompt overlay to you mobile application:
 
 	package
 	{
@@ -166,7 +154,7 @@ i.e.-- not 2+ banners, 2+ ad alerts, or 2+ fullscreen ads.
 	}
 
 	
-####FullScreen Ad example:
+####Add a FullScreen Ad to your mobile application:
 	
 	package
 	{
@@ -186,7 +174,7 @@ i.e.-- not 2+ banners, 2+ ad alerts, or 2+ fullscreen ads.
 	}
 	
 	
-####Receiving call back example:
+####How to receive a call back from the TapIt AIR Library:
 
 	package
 	{
@@ -239,3 +227,16 @@ i.e.-- not 2+ banners, 2+ ad alerts, or 2+ fullscreen ads.
 * FULLSCREEN_CLICKED
 * FULLSCREEN_DISMISSED
 * FULLSCREEN_CLOSED
+
+
+####Note about multiple ads:
+There can only be one instance of any of the available ad options.
+You can add 1 banner, 1 AdPrompt and 1 full screen add-- at the same time, but you are unable to add multiple instances of any ad option.
+i.e.-- not 2+ banners, 2+ ad alerts, or 2+ fullscreen ads.
+
+####Special note regarding debugging and testing via your IDE.
+While this Native Extension is for Android, you must debug or run to a connected Android device or emulator. If you attempt to debug or run via your IDE, you will receive an error message like so:
+
+	ArgumentError: Error #3500: The extension context does not have a method with the name addBanner.
+		at flash.external::ExtensionContext/_call()
+		at flash.external::ExtensionContext/call()
