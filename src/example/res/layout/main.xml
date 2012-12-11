@@ -60,14 +60,10 @@
 
     <com.tapit.adview.AdView
         android:id="@+id/bannerAd"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
+        android:layout_width="320dp"
+        android:layout_height="50dp"
         android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
         zone="7979" />
-    <!--<RelativeLayout-->
-        <!--android:id="@+id/bannerContainer"-->
-        <!--android:layout_width="wrap_content"-->
-        <!--android:layout_height="wrap_content"-->
-        <!--android:layout_alignParentBottom="true" />-->
 
 </RelativeLayout>

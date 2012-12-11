@@ -48,14 +48,12 @@ import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
 import android.widget.Toast;
 
-import com.tapit.adview.AdLog;
-
 
 /**
  * Viewer of advertising.
  */
 public abstract class AdViewCore extends WebView {
-    public static final String VERSION = "1.7.5";
+    public static final String VERSION = "1.7.6";
     public static final String TAG = "AdViewCore";
 
     private static final long AD_DEFAULT_RELOAD_PERIOD = 120000; // milliseconds
@@ -77,7 +75,7 @@ public abstract class AdViewCore extends WebView {
     private int adHeight; // ad height, as reported by server
     private int adWidth; // ad width, as reported by server
     private int mIndex; // index of the view within its viewgroup
-        
+
     private String mClickURL;
         
     /**
@@ -519,7 +517,7 @@ public abstract class AdViewCore extends WebView {
         
     protected void cancelUpdating(){
         adLog.log(AdLog.LOG_LEVEL_3, AdLog.LOG_TYPE_INFO, "cancelUpdating", "cancelUpdating called");
-        loadDataWithBaseURL("");
+        loadDataWithBaseURL("about:blank","");
         removeAllViews();
         if (reloadTimer != null) {
             try {
@@ -559,6 +557,7 @@ public abstract class AdViewCore extends WebView {
         private boolean forced;
         private WebView view;
         private String error;
+        private String requestUrl;
                 
         public LoadContentTask(WebView view, boolean forced) {
             this.forced = forced;
@@ -609,10 +608,11 @@ public abstract class AdViewCore extends WebView {
                 String data = null;
                 String videourl = null;
                 String clickurl = null;
+                final String url = adRequest.createURL();
+                requestUrl = url;
                 try {
                     publishProgress(BEGIN_STATE);
-        
-                    String url = adRequest.createURL();
+
                     Log.d("TapIt", url);
                     data = requestGet(url);
                     Log.d("TapIt", data);
@@ -725,7 +725,7 @@ public abstract class AdViewCore extends WebView {
                                                                         
                                     @Override
                                     public void onAnimationEnd(Animation animation) {
-                                        loadDataWithBaseURL(mContent);
+                                        loadDataWithBaseURL(url, mContent);
                                     }
                                 });
                                 handler.post(new Runnable() {
@@ -793,7 +793,7 @@ public abstract class AdViewCore extends WebView {
         @Override
         protected void onPostExecute(String htmlData) {
             if(htmlData != null) {
-                loadDataWithBaseURL(htmlData);
+                loadDataWithBaseURL(requestUrl, htmlData);
             }
         }
                 
@@ -1242,7 +1242,7 @@ public abstract class AdViewCore extends WebView {
         } else {
             if ((mContent != null) && (mContent.length() > 0)) {
 //                super.setBackgroundColor(Color.WHITE);
-                loadDataWithBaseURL(mContent);
+                loadDataWithBaseURL(url, mContent);
             }
         }
     }
@@ -1636,7 +1636,7 @@ public abstract class AdViewCore extends WebView {
         
     /**
      * Set enabled or disabled animation between banners
-     * @param b
+     * @param b true - enable animation, false - disable
      */
     public void setBannerAnimationEnabled(boolean b){
         isBannerAnimationEnabled = b;
@@ -1644,7 +1644,7 @@ public abstract class AdViewCore extends WebView {
         
     /**
      * return whether banner animation enabled
-     * @return 
+     * @return true if animated
      */
     public boolean isBannerAnimationEnabled(){
         return isBannerAnimationEnabled;
@@ -1656,8 +1656,9 @@ public abstract class AdViewCore extends WebView {
      *  
      * @param data the string to be loaded as html
      */
-    protected void loadDataWithBaseURL(String data) {
-        super.loadDataWithBaseURL("about:blank", data, "text/html", "UTF-8", "about:blank");
+    protected void loadDataWithBaseURL(String url, String data) {
+        // http://stackoverflow.com/questions/2704929/uncaught-error-security-err-dom-exception-18
+        super.loadDataWithBaseURL(url, data, "text/html", "UTF-8", "about:blank");
         // reset background
         if(backgroundColor != null) {
             setBackgroundColor(backgroundColor);

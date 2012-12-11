@@ -5,21 +5,15 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.ViewGroup;
-import android.widget.Button;
-import android.widget.LinearLayout;
-import android.widget.TextView;
-import android.widget.Toast;
-import com.google.ads.Ad;
-import com.google.ads.AdListener;
+import android.widget.*;
+import com.google.ads.*;
 import com.google.ads.AdRequest.ErrorCode;
 import com.tapit.adview.*;
+import com.tapit.adview.AdView;
 import com.tapit.adview.AdViewCore.OnAdDownload;
 import com.tapit.adview.AdViewCore.OnInterstitialAdDownload;
 import com.tapit.adview.track.InstallTracker;
 
-import java.util.HashMap;
-import java.util.Map;
 
 public class TapItTestActivity extends Activity {
 
@@ -39,7 +33,6 @@ public class TapItTestActivity extends Activity {
     private AdView bannerAd;
     private AdPrompt adPrompt;
 
-    private com.google.ads.AdView googAd;
     private com.google.ads.InterstitialAd googInterstitial;
 
     /** Called when the activity is first created. */
@@ -287,17 +280,16 @@ public class TapItTestActivity extends Activity {
         showButton.setEnabled(false);
 
         final TapItTestActivity me = this;
-        ((Button)findViewById(R.id.loadAdPromptButton)).setOnClickListener(new OnClickListener() {
+        findViewById(R.id.loadAdPromptButton).setOnClickListener(new OnClickListener() {
             @Override
-            public void onClick(View view){
+            public void onClick(View view) {
                 me.preloadAdPrompt();
             }
         });
 
-        ((Button)findViewById(R.id.showAdPromptButton)).setOnClickListener(new OnClickListener() {
-
+        findViewById(R.id.showAdPromptButton).setOnClickListener(new OnClickListener() {
             @Override
-            public void onClick(View v){
+            public void onClick(View v) {
                 me.fireAdPrompt();
             }
         });
@@ -327,7 +319,7 @@ public class TapItTestActivity extends Activity {
         });
         gShowButton.setEnabled(false);
 
-        googAd = new com.google.ads.AdView(this, com.google.ads.AdSize.BANNER, "903dbd7178b049f7");
+        com.google.ads.AdView googAd = new com.google.ads.AdView(this, AdSize.BANNER, "903dbd7178b049f7");
 //        googAd = new com.google.ads.AdView(this, AdSize.IAB_MRECT, "903dbd7178b049f7");
         googAd.setAdListener(new AdListener() {
 

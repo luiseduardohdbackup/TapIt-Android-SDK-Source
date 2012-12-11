@@ -1,7 +1,7 @@
 TapIt Android SDK
 =================
 
-Version 1.7.5
+Version 1.7.6
 
 This is the Android SDK for the TapIt! mobile ad network. Go to http://tapit.com/ for more details and to sign up.
 
@@ -62,11 +62,14 @@ Banner Usage
 ------------
 ````xml
 <!-- Add banner to your layout xml -->
+<!-- this will center a 320x50 ad at the bottom of the screen, -->
+<!-- assuming a RelativeLayout is used -->
 <com.tapit.adview.AdView
     android:id="@+id/bannerAd"
-    android:layout_width="fill_parent"
-    android:layout_height="wrap_content"
+    android:layout_width="320dp"
+    android:layout_height="50dp"
     android:layout_alignParentBottom="true"
+    android:layout_centerHorizontal="true"
     zone="YOUR_ZONE_ID" />
 ````
 
