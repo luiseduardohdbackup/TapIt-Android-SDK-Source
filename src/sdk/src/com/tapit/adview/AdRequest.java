@@ -5,7 +5,6 @@ import java.net.URLEncoder;
 import java.util.*;
 
 import android.content.Context;
-import android.telephony.TelephonyManager;
 import android.util.Log;
 
 public class AdRequest {
@@ -27,7 +26,8 @@ public class AdRequest {
     private static final String PARAMETER_WIDTH = "w";
     private static final String PARAMETER_CONNECTION_SPEED = "connection_speed";
     private static final String PARAMETER_LANGUAGES = "languages";
-    private static final String PARAMETER_CARRIER = "carrier";
+    private static final String PARAMETER_CARRIER_NAME = "carrier";
+    private static final String PARAMETER_CARRIER_ID = "carrier_id";
     public final static String PARAMETER_DEVICE_ID = "udid";
 
     private String adserverURL = "http://r.tapit.com/adrequest.php";
@@ -47,7 +47,8 @@ public class AdRequest {
 
     public void initDefaultParameters(Context context) {
         String deviceIdMD5 = Utils.getDeviceIdMD5(context);
-        String carrierName = Utils.getCarrier(context);
+        String carrierName = Utils.getCarrierName(context);
+        String carrierId = Utils.getCarrierId(context);
         String ua = Utils.getUserAgentString(context);
 
         adLog.log(AdLog.LOG_LEVEL_2, AdLog.LOG_TYPE_INFO, "deviceIdMD5", deviceIdMD5);
@@ -57,7 +58,8 @@ public class AdRequest {
 
         parameters.put("format", "json");
         parameters.put("sdk", "android-v" + AdViewCore.VERSION);
-        parameters.put(PARAMETER_CARRIER, carrierName);
+        parameters.put(PARAMETER_CARRIER_NAME, carrierName);
+        parameters.put(PARAMETER_CARRIER_ID, carrierId);
         parameters.put(PARAMETER_LANGUAGES, Locale.getDefault().getLanguage());
         parameters.put(PARAMETER_USER_AGENT, ua);
     }

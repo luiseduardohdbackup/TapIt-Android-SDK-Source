@@ -133,8 +133,13 @@ public class Utils {
 	    return udid;
 	}
 	
-	public static String getCarrier(Context context) {
+	public static String getCarrierName(Context context) {
 		TelephonyManager manager = (TelephonyManager)context.getSystemService(Context.TELEPHONY_SERVICE);
 		return manager.getNetworkOperatorName();
+	}
+
+	public static String getCarrierId(Context context) {
+		TelephonyManager manager = (TelephonyManager)context.getSystemService(Context.TELEPHONY_SERVICE);
+		return manager.getNetworkOperator();
 	}
 }
