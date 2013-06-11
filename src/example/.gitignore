@@ -1,2 +1,6 @@
 /bin
 /gen
+.project
+.classpath
+*.iml
+/proguard_logs

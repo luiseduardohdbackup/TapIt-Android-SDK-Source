@@ -19,6 +19,10 @@
 #   public *;
 #}
 
-# needed to ensure that admob mediation works
 -keep public class com.tapit.**
--keep public class com.google.ads.**
+
+# enable this if you use admob mediation
+#-keep public class com.google.ads.**
+
+# disable this if you are using admob mediation
+-dontwarn com.tapit.mediation.admob.**

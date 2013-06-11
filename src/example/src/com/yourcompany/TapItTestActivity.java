@@ -1,19 +1,20 @@
 package com.yourcompany;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.*;
-import com.google.ads.*;
-import com.google.ads.AdRequest.ErrorCode;
 import com.tapit.adview.*;
 import com.tapit.adview.AdView;
 import com.tapit.adview.AdViewCore.OnAdDownload;
 import com.tapit.adview.AdViewCore.OnInterstitialAdDownload;
 import com.tapit.adview.track.InstallTracker;
 
+import java.util.HashMap;
+import java.util.Map;
 
 public class TapItTestActivity extends Activity {
 
@@ -26,14 +27,10 @@ public class TapItTestActivity extends Activity {
     private Button loadButton;
     private Button showButton;
 
-    private Button gLoadButton;
-    private Button gShowButton;
-
     private AdInterstitialView interstitialAd;
     private AdView bannerAd;
     private AdPrompt adPrompt;
 
-    private com.google.ads.InterstitialAd googInterstitial;
 
     /** Called when the activity is first created. */
     @Override
@@ -47,7 +44,6 @@ public class TapItTestActivity extends Activity {
         setupBannerAd();
 
         setupButtons();
-        setupGoogle();
 
         TextView txt = (TextView)findViewById(R.id.tapitText);
         txt.setText(Utils.getDeviceId(this));
@@ -294,114 +290,19 @@ public class TapItTestActivity extends Activity {
             }
         });
 
-    }
-
-
-///////////////////////////////////////////////////////////////
-// Google AdMob Mediation example
-///////////////////////////////////////////////////////////////
-
-    private void setupGoogle() {
-        // Setup the google related buttons
-        gLoadButton = (Button)findViewById(R.id.gLoadInterstitialButton);
-        gLoadButton.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View button) {
-                setupGoogInterstitial();
-            }
-        });
-        gShowButton = (Button)findViewById(R.id.gShowInterstitialButton);
-        gShowButton.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View button){
-                googInterstitial.show();
-            }
-        });
-        gShowButton.setEnabled(false);
-
-        com.google.ads.AdView googAd = new com.google.ads.AdView(this, AdSize.BANNER, "903dbd7178b049f7");
-//        googAd = new com.google.ads.AdView(this, AdSize.IAB_MRECT, "903dbd7178b049f7");
-        googAd.setAdListener(new AdListener() {
-
-            @Override
-            public void onDismissScreen(Ad gAd) {
-                Log.d("TapItTest", "googAd->onDismissScreen");
-            }
-
-            @Override
-            public void onFailedToReceiveAd(Ad gAd, ErrorCode errCode) {
-                Log.d("TapItTest", "googAd->onFailedToReceiveAd: " + errCode);
-            }
-
-            @Override
-            public void onLeaveApplication(Ad gAd) {
-                Log.d("TapItTest", "googAd->onLeaveApplication");
-            }
-
-            @Override
-            public void onPresentScreen(Ad gAd) {
-                Log.d("TapItTest", "googAd->onPresentScreen");
-            }
-
-            @Override
-            public void onReceiveAd(Ad gAd) {
-                Log.d("TapItTest", "googAd->onReceiveAd");
-            }
-
-        });
-
-        com.google.ads.AdRequest googAdRequest = new com.google.ads.AdRequest();
-        googAdRequest.addTestDevice(com.google.ads.AdRequest.TEST_EMULATOR);
-        googAdRequest.addTestDevice("ED9A71101B1CD7741894D3D1B181D51B");
-
-        LinearLayout layout = (LinearLayout)findViewById(R.id.googLayout);
-
-        // Add the adView to it
-        layout.addView(googAd);
-
-        // Initiate a generic request to load it with an ad
-        googAd.loadAd(googAdRequest);
-    }
-
-    private void setupGoogInterstitial() {
-        com.google.ads.AdRequest googAdRequest = new com.google.ads.AdRequest();
-        googAdRequest.addTestDevice(com.google.ads.AdRequest.TEST_EMULATOR);
-        googAdRequest.addTestDevice("ED9A71101B1CD7741894D3D1B181D51B");
-
-        googInterstitial = new com.google.ads.InterstitialAd(this, "3027767e23364ccf");
-        googInterstitial.loadAd(googAdRequest);
-        googInterstitial.setAdListener(new AdListener() {
-
-            @Override
-            public void onDismissScreen(Ad arg0){
-                Log.d("TapItTest", "googInterstitial->onDismissScreen");
-                gShowButton.setEnabled(false);
-                gLoadButton.setEnabled(true);
-            }
-
-            @Override
-            public void onFailedToReceiveAd(Ad arg0, ErrorCode arg1){
-                Log.d("TapItTest", "googInterstitial->onFailedToReceiveAd: " + arg1);
-                gShowButton.setEnabled(false);
-                gLoadButton.setEnabled(true);
-            }
-
-            @Override
-            public void onLeaveApplication(Ad arg0){
-                Log.d("TapItTest", "googInterstitial->onLeaveApplication");
-            }
-
-            @Override
-            public void onPresentScreen(Ad arg0){
-                Log.d("TapItTest", "googInterstitial->onPresentScreen");
-            }
-
-            @Override
-            public void onReceiveAd(Ad arg0){
-                Log.d("TapItTest", "googInterstitial->onReceiveAd");
-                gShowButton.setEnabled(true);
-            }
-        });
+//        // Uncomment to enable AdMob mediation example,
+//        // as well as the AdMobActivity activity block in AndroidManifest.xml
+//        // Download the AdMob SDK from https://developers.google.com/mobile-ads-sdk/download
+//
+//        Button adMobButton = (Button)findViewById(R.id.loadAdMobButton);
+//        adMobButton.setOnClickListener(new OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//                Intent intent = new Intent(TapItTestActivity.this, AdMobActivity.class);
+//                startActivity(intent);
+//            }
+//        });
+//        adMobButton.setEnabled(true);
     }
 
 

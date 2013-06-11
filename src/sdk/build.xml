@@ -39,7 +39,7 @@
 			<src path="src\com\tapit\mediation" />
 			<classpath>
 				<pathelement path="${android.jar}"/>
-				<pathelement path="lib/GoogleAdMobAdsSdk-6.0.1.jar"/>
+				<pathelement path="lib/GoogleAdMobAdsSdk-6.4.1.jar"/>
 		    </classpath>
         </javac>
 	</target>

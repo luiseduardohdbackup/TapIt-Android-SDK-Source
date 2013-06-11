@@ -2,7 +2,8 @@
 <resources>
 
     <string name="tapitButtons">TapIt Buttons</string>
-    <string name="googleButtons">Google Buttons</string>
+    <string name="googleButtons">Google AdMob Mediation</string>
     <string name="app_name">TapItTest</string>
+    <string name="tapit_banner_zone_id">7979</string>
 
 </resources>

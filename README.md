@@ -196,3 +196,9 @@ interstitialAd.load(); // request an ad from the server, to be displayed later..
 ````
 
 Sample implementation can be found here: https://github.com/tapit/TapIt-Android-SDK-Source/blob/master/src/example/src/com/yourcompany/TapItTestActivity.java#L191
+
+
+ProGuard Settings
+-----------------
+Recommended ProGuard settings can be found here:
+https://github.com/tapit/TapIt-Android-SDK-Source/blob/master/src/example/proguard-project.txt

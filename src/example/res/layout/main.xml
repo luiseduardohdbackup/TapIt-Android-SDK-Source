@@ -34,28 +34,13 @@
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:text="Show Alert Ad" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/googLayout"
-        android:layout_below="@+id/mainLayout"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical" >
-        <TextView
+        <Button
+            android:id="@+id/loadAdMobButton"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:text="@string/googleButtons" />
-        <Button 
-            android:id="@+id/gLoadInterstitialButton"
-            android:text="Load Interstitial"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content" />         
-        <Button 
-            android:id="@+id/gShowInterstitialButton"
-            android:text="Show Interstitial"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content" />         
+            android:text="AdMob Mediation"
+            android:layout_marginTop="20dp"
+            android:enabled="false" />
     </LinearLayout>
 
     <com.tapit.adview.AdView
