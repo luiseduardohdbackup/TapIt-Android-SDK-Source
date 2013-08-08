@@ -19,6 +19,7 @@ public class AdInterstitialView extends AdInterstitialBaseView {
 
     public AdInterstitialView(Context context, String zone){
         super(context, zone);
+        buildInterstitialCloseButton();
         setAdtype("2");
         setMraidPlacementType(MraidPlacementType.INTERSTITIAL);
     }
@@ -35,13 +36,13 @@ public class AdInterstitialView extends AdInterstitialBaseView {
         return interstitialLayout;
     }
 
-    protected void showInterstitialCloseButton(){
+    private void buildInterstitialCloseButton() {
         StateListDrawable states = new StateListDrawable();
 
         try {
             states.addState(new int[]{-android.R.attr.state_pressed}, getResources().getDrawable(android.R.drawable.ic_notification_clear_all));
         } catch (RuntimeException e){
-            e.printStackTrace();
+            TILog.e("and error occurred", e);
         }
         closeButton = new ImageButton(context);
         closeButton.setImageDrawable(states);
@@ -51,7 +52,9 @@ public class AdInterstitialView extends AdInterstitialBaseView {
                 closeInterstitial();
             }
         });
+    }
 
+    protected void showInterstitialCloseButton() {
         final float scale = getResources().getDisplayMetrics().density;
         int buttonSize = (int) (CLOSE_BUTTON_SIZE_DP * scale + 0.5f);
         int buttonPadding = (int) (CLOSE_BUTTON_PADDING_DP * scale + 0.5f);
@@ -65,7 +68,8 @@ public class AdInterstitialView extends AdInterstitialBaseView {
 
     public void useCustomCloseButton(boolean useCustomClose) {
         TILog.e("useCustomCloseButton from INTERSTITIAL!");
-        //TODO implement me!
+        int visiblity = useCustomClose ? GONE : VISIBLE;
+        closeButton.setVisibility(visiblity);
     }
 
 

@@ -4,14 +4,14 @@ public enum MraidPlacementType {
     INLINE("inline"),
     INTERSTITIAL("interstitial");
 
-    public final String name;
+    public final String value;
 
-    private MraidPlacementType(String name) {
-        this.name = name;
+    private MraidPlacementType(String value) {
+        this.value = value;
     }
 
     @Override
     public String toString() {
-        return name;
+        return value;
     }
 }

@@ -108,7 +108,7 @@ public abstract class AdViewCore extends WebView {
 
     protected static final int BACKGROUND_ID = 101;
     protected static final int PLACEHOLDER_ID = 100;
-    private boolean mraid = false;
+    protected boolean mraid = false;
     private MraidState mraidState = MraidState.LOADING;
     private MraidPlacementType mraidPlacementType = MraidPlacementType.INLINE;
 

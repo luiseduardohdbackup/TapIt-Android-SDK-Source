@@ -42,6 +42,7 @@ public abstract class AdInterstitialBaseView extends AdView implements OnAdDownl
         setOnAdDownload(this);
         setOnAdClickListener(this);
         setUpdateTime(0); // disable add cycling
+        setVisibility(GONE);
     }
 
     public void setAdSize(FullscreenAdSize adSize) {
@@ -94,11 +95,17 @@ public abstract class AdInterstitialBaseView extends AdView implements OnAdDownl
                     // interstitial was never displayed; nothing to do here...
                     return;
                 }
+                if (adView.mraid) {
+                    setMraidState(MraidState.HIDDEN);
+                    syncMraidState();
+                    fireMraidEvent(MraidEvent.STATECHANGE, getMraidState().value);
+                }
                 ((Activity)callingActivityContext).finish();
                 if(interstitialListener != null) {
                     interstitialListener.didClose(adView);
                 }
-                                
+
+
                 removeViews();
             }
         });
@@ -117,6 +124,12 @@ public abstract class AdInterstitialBaseView extends AdView implements OnAdDownl
             interstitialListener.willOpen(this);
         }
         AdActivity.adView = this;
+        setVisibility(VISIBLE);
+
+        if (mraid) {
+            syncMraidState();
+            fireMraidEvent(MraidEvent.VIEWABLECHANGE, "true");
+        }
         Intent i = new Intent(context, AdActivity.class);
         ((Activity)context).startActivityForResult(i,1);
     }

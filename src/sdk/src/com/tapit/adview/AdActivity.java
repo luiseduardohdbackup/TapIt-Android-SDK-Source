@@ -27,6 +27,12 @@ public class AdActivity extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        getWindow().requestFeature(Window.FEATURE_NO_TITLE);
+        getWindow().requestFeature(Window.FEATURE_PROGRESS);
+
+        // Makes Progress bar Visible
+        getWindow().setFeatureInt(Window.FEATURE_PROGRESS, Window.PROGRESS_VISIBILITY_ON);
+
         String clickURL = getIntent().getStringExtra("com.tapit.adview.ClickURL");
         if(clickURL != null) {
             setupWebView(savedInstanceState);
@@ -44,11 +50,6 @@ public class AdActivity extends Activity {
     }
 
     private void setupWebView(Bundle savedInstanceState) {
-        getWindow().requestFeature(Window.FEATURE_PROGRESS);
-
-        // Makes Progress bar Visible
-        getWindow().setFeatureInt(Window.FEATURE_PROGRESS, Window.PROGRESS_VISIBILITY_ON);
-
         WebView webView = new WebView(this);
         webView.setLayoutParams(new LinearLayout.LayoutParams(LayoutParams.FILL_PARENT,
                 LayoutParams.FILL_PARENT, 1f));
