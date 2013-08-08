@@ -110,6 +110,15 @@ public abstract class AdViewCore extends WebView {
     protected static final int PLACEHOLDER_ID = 100;
     private boolean mraid = false;
     private MraidState mraidState = MraidState.LOADING;
+    private MraidPlacementType mraidPlacementType = MraidPlacementType.INLINE;
+
+    public MraidPlacementType getMraidPlacementType() {
+        return mraidPlacementType;
+    }
+
+    public void setMraidPlacementType(MraidPlacementType mraidPlacementType) {
+        this.mraidPlacementType = mraidPlacementType;
+    }
 
     private enum ViewState {
         DEFAULT, RESIZED, EXPANDED, HIDDEN
@@ -872,7 +881,6 @@ public abstract class AdViewCore extends WebView {
         public boolean shouldOverrideUrlLoading(WebView view, String url) {
             try {
                 if(url.startsWith("nativecall://")) {
-                    TILog.e("intercepting url load: " + url);
                   handleNativeMraidCall(url);
                   return true;
                 }
@@ -918,7 +926,6 @@ public abstract class AdViewCore extends WebView {
                         e.getMessage());
             }
 
-            TILog.e("canceled url: " + url);
             return true;
         }
 
@@ -935,8 +942,6 @@ public abstract class AdViewCore extends WebView {
             Log.d("TapIt", "onPageFinished("+ numPagesLoading +"): " + url);
             if (numPagesLoading == 0) {
               if(AdViewCore.this.mraid) {
-                //TODO fire off MRAID events, if ad is MRAID
-//                fireMraidEvent(MraidEvent.READY, (List<?>)null);
                   if (getMraidState() == MraidState.LOADING) {
                       fireMraidEvent(MraidEvent.READY, null);
                       setMraidState(MraidState.DEFAULT);
@@ -1090,58 +1095,29 @@ public abstract class AdViewCore extends WebView {
     }
 
     public void resize(int height, int width, boolean isModal, String twoPartCreativeUrl) {
-//        ((Activity)getContext()).getWindow().setFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
-//                WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS );
+        //TODO if isModal, then load in an AdActivity?
+
         FrameLayout rootView = (FrameLayout)getRootView().findViewById(android.R.id.content);
 
         if (placeholderView == null) {
             // pull the ad out of the view hierarchy and put it on top of the stack
             placeholderView = new FrameLayout(this.getContext());
             placeholderView.setBackgroundColor(Color.RED);
+            placeholderView.setVisibility(View.INVISIBLE);
             swapViews(this, placeholderView);
         }
 
         rootView.bringToFront();
-//        int scaledWidth = (int)(width * mDensity + 0.5f);
-//        int scaledHeight = (int)(height * mDensity + 0.5f);
-//        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(scaledWidth, scaledHeight);
-//        params.gravity = Gravity.CENTER;
-        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
-                width,
-                height - 300,  //TODO get rid of debugging code! just use height
-                Gravity.CENTER
-        );
+        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(width, height);
+//        params.gravity = Gravity.CENTER; // this causes taps to be misaligned for some reason...
         rootView.addView(this, params);
 
-        TILog.d(params.width + ", " + params.height);
-//        this.setLayoutParams(params);
-
-//        rootView.setBackgroundColor(Color.GRAY);
-//        setBackgroundColor(Color.GREEN);
+        OnAdDownload clickListener = getOnAdDownload();
+        if(clickListener != null) {
+            clickListener.willPresentFullScreen(this);
+            clickListener.didPresentFullScreen(this);
+        }
         cancelUpdating();
-    }
-
-    public void resize_old(int x, int y, int height, int width) {
-        FrameLayout rootView = (FrameLayout)getRootView().findViewById(android.R.id.content);
-        rootView.bringToFront();
-//        int scaledWidth = (int)(width * mDensity + 0.5f);
-//        int scaledHeight = (int)(height * mDensity + 0.5f);
-//        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(scaledWidth, scaledHeight);
-//        params.gravity = Gravity.CENTER;
-        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
-                width,
-                height,
-                Gravity.CENTER
-        );
-
-        ViewGroup parent = (ViewGroup) getParent();
-        parent.removeView(this);
-        rootView.addView(this, params);
-
-        TILog.d(params.width + ", " + params.height);
-        this.setLayoutParams(params);
-
-        rootView.setBackgroundColor(Color.GRAY);
     }
 
     public void mraidClose() {
@@ -1155,9 +1131,14 @@ public abstract class AdViewCore extends WebView {
         if (MraidState.DEFAULT.equals(getMraidState())) {
             setMraidState(MraidState.HIDDEN);
             setVisibility(View.GONE);
+            fireMraidEvent(MraidEvent.VIEWABLECHANGE, "false");
         }
         else {
             setMraidState(MraidState.DEFAULT);
+            OnAdDownload clickListener = getOnAdDownload();
+            if(clickListener != null) {
+                clickListener.willDismissFullScreen(this);
+            }
         }
         fireMraidEvent(MraidEvent.STATECHANGE, mraidState.value);
         syncMraidState();
@@ -1264,6 +1245,7 @@ public abstract class AdViewCore extends WebView {
     }
 
     public void useCustomCloseButton(boolean useCustomClose) {
+        TILog.e("useCustomCloseButton from AdViewCore!");
         //TODO implement me!
     }
 
@@ -1377,14 +1359,6 @@ public abstract class AdViewCore extends WebView {
         if (mDataToInject != null){
             injectJavaScript(mDataToInject);
         }
-                
-//        injectJavaScript("Ormma.ready();");
-                
-                
-//        mDefaultHeight = (int) (getHeight() / mDensity);
-//        mDefaultWidth = (int) (getWidth() / mDensity);
-
-//        setVisibility(View.VISIBLE);
         if (animateBack){
                         
             final float centerX = getWidth() / 2.0f;
@@ -1892,23 +1866,23 @@ public abstract class AdViewCore extends WebView {
 
     protected void syncMraidState() {
 
-      WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
-      Display display = wm.getDefaultDisplay();
-      int width = display.getWidth();  // deprecated
-      int height = display.getHeight();  // deprecated
+        WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+        Display display = wm.getDefaultDisplay();
+        int width = display.getWidth();  // deprecated
+        int height = display.getHeight();  // deprecated
 
 
-
-      HashMap<String, Object> params = new HashMap<String, Object>();
-      params.put("state", mraidState.value);
-      params.put("isVisible", getVisibility() == View.VISIBLE);
+        HashMap<String, Object> params = new HashMap<String, Object>();
+        params.put("state", mraidState.value);
+        params.put("isVisible", getVisibility() == View.VISIBLE);
 //      params.put("height", (int)(height / mDensity));
 //      params.put("width", (int) (width / mDensity));
-      params.put("height", height);
-      params.put("width", width);
-      params.put("x", 0);
-      params.put("y", 0);
+        params.put("height", height);
+        params.put("width", width);
+        params.put("x", 0);
+        params.put("y", 0);
+        params.put("placementType", getMraidPlacementType().toString());
 
-      mraidResponse(params, null);
+        mraidResponse(params, null);
     }
 }

@@ -27,7 +27,7 @@ public enum MraidCommand implements IMraidCommand {
             adView.useCustomCloseButton(useCustomClose);
             boolean isModal = "true".equalsIgnoreCase(params.get("isModal"));
             String twoPartCreativeUrl = params.get("url");
-            adView.resize(0,0,height,width, isModal, twoPartCreativeUrl);
+            adView.resize(height, width, isModal, twoPartCreativeUrl);
             adView.setMraidState(MraidState.EXPANDED);
             adView.syncMraidState();
             adView.fireMraidEvent(MraidEvent.STATECHANGE, adView.getMraidState().value);
@@ -44,7 +44,7 @@ public enum MraidCommand implements IMraidCommand {
         }
     }),
 
-    CUSTOM_CLOSE_BUTTON("customClose", new IMraidCommand() {
+    CUSTOM_CLOSE_BUTTON("useCustomClose", new IMraidCommand() {
         @Override
         public void execute(Map<String, String> params, AdViewCore adView) {
             // tell adview if we should render a close button
@@ -89,7 +89,6 @@ public enum MraidCommand implements IMraidCommand {
 
     public static void routeRequest(String url, AdViewCore adView) {
         // parse string
-        TILog.d("routeRequest(" + url + ")");
         String parts[] = QUESTION_MARK_PATTERN.split(url, 2);
         String commandName = parts[0];
         Map<String, String> params = Collections.<String, String>emptyMap();

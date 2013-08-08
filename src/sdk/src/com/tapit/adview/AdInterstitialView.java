@@ -20,6 +20,7 @@ public class AdInterstitialView extends AdInterstitialBaseView {
     public AdInterstitialView(Context context, String zone){
         super(context, zone);
         setAdtype("2");
+        setMraidPlacementType(MraidPlacementType.INTERSTITIAL);
     }
 
     @Override
@@ -61,6 +62,12 @@ public class AdInterstitialView extends AdInterstitialBaseView {
         interstitialLayout.removeView(closeButton);
         interstitialLayout.addView(closeButton, buttonLayout);
     }
+
+    public void useCustomCloseButton(boolean useCustomClose) {
+        TILog.e("useCustomCloseButton from INTERSTITIAL!");
+        //TODO implement me!
+    }
+
 
     @Override
     public void click(String url){
