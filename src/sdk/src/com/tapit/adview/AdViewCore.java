@@ -3,11 +3,12 @@ package com.tapit.adview;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Hashtable;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 
+import android.annotation.TargetApi;
+import android.os.Build;
+import android.view.*;
+import android.widget.RelativeLayout;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -33,9 +34,6 @@ import android.os.Looper;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
-import android.view.View;
-import android.view.ViewGroup;
-import android.view.WindowManager;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.Animation;
 import android.view.animation.Animation.AnimationListener;
@@ -53,7 +51,7 @@ import android.widget.Toast;
  * Viewer of advertising.
  */
 public abstract class AdViewCore extends WebView {
-    public static final String VERSION = "1.7.9";
+    public static final String VERSION = "2.0.0";
     public static final String TAG = "AdViewCore";
 
     private static final long AD_DEFAULT_RELOAD_PERIOD = 120000; // milliseconds
@@ -78,9 +76,6 @@ public abstract class AdViewCore extends WebView {
 
     private String mClickURL;
         
-    /**
-     * The b got layout params.
-     */
     private boolean bGotLayoutParams;
         
     private boolean isBannerAnimationEnabled = true;
@@ -113,15 +108,16 @@ public abstract class AdViewCore extends WebView {
 
     protected static final int BACKGROUND_ID = 101;
     protected static final int PLACEHOLDER_ID = 100;
-        
+    private boolean mraid = false;
+    private MraidState mraidState = MraidState.LOADING;
+
     private enum ViewState {
         DEFAULT, RESIZED, EXPANDED, HIDDEN
     }
 
     private ViewState mViewState = ViewState.DEFAULT;
     public String mDataToInject = null;
-    private static String mScriptPath = null;
-    private static String mBridgeScriptPath = null;
+    public static final String mraidBridgePath = "http://dev.tapit.com/~npenteado/mraid/mraid.js";
     private String mContent;
 
     protected AdLog adLog = new AdLog(this);
@@ -129,12 +125,7 @@ public abstract class AdViewCore extends WebView {
     private String typeOfBanner = TYPE_BANNER;
         
     private static final String TYPE_BANNER = "banner";
-        
-    private static final String TYPE_ORMMA = "ormma";
-        
-    private static final String TYPE_VIDEO = "video";
-        
-    private static final String TYPE_OFFERWALL = "offerwall";    
+    private static final String TYPE_OFFERWALL = "offerwall";
 
     public Object lock = new Object();
 
@@ -145,7 +136,10 @@ public abstract class AdViewCore extends WebView {
     public enum ACTION {
         PLAY_AUDIO, PLAY_VIDEO
     }
-        
+
+
+    private FrameLayout placeholderView = null;
+
 
     /**
      * Creation of viewer of advertising.
@@ -167,10 +161,6 @@ public abstract class AdViewCore extends WebView {
     /**
      * Creation of viewer of advertising. It is used for element creation in a
      * XML template.
-     * 
-     * @param context
-     * @param attrs
-     * @param defStyle
      */
     public AdViewCore(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
@@ -180,9 +170,6 @@ public abstract class AdViewCore extends WebView {
     /**
      * Creation of viewer of advertising. It is used for element creation in a
      * XML template.
-     * 
-     * @param context
-     * @param attrs
      */
     public AdViewCore(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -192,8 +179,6 @@ public abstract class AdViewCore extends WebView {
     /**
      * Creation of viewer of advertising. It is used for element creation in a
      * XML template.
-     * 
-     * @param context
      */
     public AdViewCore(Context context) {
         super(context);
@@ -209,7 +194,6 @@ public abstract class AdViewCore extends WebView {
 
     /**
      * Set interface for advertising opening.
-     * @param adClickListener
      */
     public void setOnAdClickListener(OnAdClickListener adClickListener) {
         this.adClickListener = adClickListener;
@@ -243,31 +227,26 @@ public abstract class AdViewCore extends WebView {
                 
         /**
          * This event is fired after a user taps the ad.
-         * @param adView
          */
         public void clicked(AdViewCore adView);
 
         /**
          * This event is fired just before an ad takes over the screen.
-         * @param adView
          */
         public void willPresentFullScreen(AdViewCore adView);
                 
         /**
          * This event is fired once an ad takes over the screen.
-         * @param adView
          */
         public void didPresentFullScreen(AdViewCore adView);
                 
         /**
          * This even is fired just before an ad dismisses it's full screen view.
-         * @param adView
          */
         public void willDismissFullScreen(AdViewCore adView);
                 
         /**
          * This event is fired just before the app will be sent to the background.
-         * @param adView
          */
         public void willLeaveApplication(AdViewCore adView);
     }
@@ -303,13 +282,11 @@ public abstract class AdViewCore extends WebView {
 
         /**
          * This event is fired after a user taps the ad.
-         * @param adView
          */
         public void clicked(AdViewCore adView);
 
         /**
          * This event is fired just before the app will be sent to the background.
-         * @param adView
          */
         public void willLeaveApplication(AdViewCore adView);
     }
@@ -323,8 +300,6 @@ public abstract class AdViewCore extends WebView {
 
     /**
      * Set interface for advertising downloading.
-     * 
-     * @param adDownload
      */
     public void setOnAdDownload(OnAdDownload adDownload) {
         this.adDownload = adDownload;
@@ -344,8 +319,6 @@ public abstract class AdViewCore extends WebView {
     /**
      * @deprecated Use setCustomParameters(Map<String, String> customParameters) instead
      * Optional. Set Custom Parameters.
-     * 
-     * @param customParameters
      */
     public void setCustomParameters(Hashtable<String, String> customParameters) {
         if (adRequest != null) {
@@ -355,8 +328,6 @@ public abstract class AdViewCore extends WebView {
 
     /**
      * Optional. Set Custom Parameters.
-     *
-     * @param customParameters
      */
     public void setCustomParameters(Map<String, String> customParameters) {
         if (adRequest != null) {
@@ -470,8 +441,6 @@ public abstract class AdViewCore extends WebView {
         wm.getDefaultDisplay().getMetrics(metrics);
         mDensity = metrics.density;
                 
-        setScriptPath();
-
         setWebViewClient(new AdWebViewClient(context));
         setWebChromeClient(mWebChromeClient);
     }
@@ -496,10 +465,10 @@ public abstract class AdViewCore extends WebView {
         }
 
         if (isFirstTime){
-            adLog.log(AdLog.LOG_LEVEL_3, AdLog.LOG_TYPE_INFO, "onAttachedToWindow", "isFirstTime is true. Called LoadContentTask");
             handler.post(new Runnable() {
                 @Override
                 public void run() {
+                    adLog.log(AdLog.LOG_LEVEL_3, AdLog.LOG_TYPE_INFO, "onAttachedToWindow", "isFirstTime is true. Called LoadContentTask");
                     update(false);
                 }
             });
@@ -521,7 +490,6 @@ public abstract class AdViewCore extends WebView {
         
     protected void cancelUpdating(){
         adLog.log(AdLog.LOG_LEVEL_3, AdLog.LOG_TYPE_INFO, "cancelUpdating", "cancelUpdating called");
-        loadDataWithBaseURL("about:blank","");
         removeAllViews();
         if (reloadTimer != null) {
             try {
@@ -547,10 +515,15 @@ public abstract class AdViewCore extends WebView {
     /**
      * Immediately update banner contents.
      */
+    @TargetApi(Build.VERSION_CODES.HONEYCOMB) // API 11
     public void update(boolean forced) {
         contentTask = new LoadContentTask((AdView)this, forced);
-        contentTask.execute(0);
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB)
+            contentTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, 0);
+        else
+            contentTask.execute(0);
     }
+
 
     private class LoadContentTask extends AsyncTask<Integer, Integer, String>{
                 
@@ -610,7 +583,7 @@ public abstract class AdViewCore extends WebView {
                  * seek...
                  */
                 String data = null;
-                String videourl = null;
+//                String videourl = null;
                 String clickurl = null;
                 // calc request size based on size of layout allotted
                 view.calcDimensionsForRequest(context);
@@ -634,10 +607,6 @@ public abstract class AdViewCore extends WebView {
                             typeOfBanner = jsonObject.getString("type");
                             if (TYPE_BANNER.equals(typeOfBanner)){
                                 data = (String) jsonObject.get("html");
-                            } else if (TYPE_ORMMA.equals(typeOfBanner)){
-                                data = (String) jsonObject.get("html");                                
-                            } else if (TYPE_VIDEO.equals(typeOfBanner)){
-                                videourl = jsonObject.getString("videourl");
                             } else if (TYPE_OFFERWALL.equals(typeOfBanner)){
                                 // do nothing
                             } else {// if nothing equal then assume this is BANNER
@@ -654,7 +623,7 @@ public abstract class AdViewCore extends WebView {
                                 mClickURL = clickurl;
                             }
 
-                                                        
+
                             if(jsonObject.has("adHeight")) {
                                 try {
                                     adHeight = Integer.parseInt(jsonObject.getString("adHeight"));
@@ -674,6 +643,9 @@ public abstract class AdViewCore extends WebView {
                             }
                             else {
                                 adWidth = -1;
+                            }
+
+                            if (jsonObject.has("mraid")) {
                             }
                         }
                                         
@@ -706,9 +678,9 @@ public abstract class AdViewCore extends WebView {
                                                 
 //                        view.clearCache(true);
                 
-                        if (TYPE_BANNER.equals(typeOfBanner) || TYPE_ORMMA.equals(typeOfBanner)){
-                                                        
-                            data = wrapToHTML(data, mBridgeScriptPath, mScriptPath);
+                        if (TYPE_BANNER.equals(typeOfBanner)){
+                            mraid = checkIfMraid(data);
+                            data = wrapToHTML(data, mraid);
                             mContent = data;
                                                         
                             if (isBannerAnimationEnabled && !fTime){
@@ -748,18 +720,18 @@ public abstract class AdViewCore extends WebView {
                                 retData = data;
 //                                loadDataWithBaseURL(data);
                             }
-                        } else if (TYPE_VIDEO.equals(typeOfBanner)) {
-//                            Dimensions d = null;
-//                            d = new Dimensions();
-//                            d.x = 0; d.y = 0; d.width = 480; d.height = 480;
-//                            Log.d(TAG, videourl);
-                            boolean audioMuted = false;
-                            boolean autoPlay = false;
-                            boolean showControls = false;
-                            boolean repeat = false;
-                            playVideo(videourl, clickurl, audioMuted, autoPlay, showControls, repeat, null, "fullscreen", "exit");
+//                        } else if (TYPE_VIDEO.equals(typeOfBanner)) {
+////                            Dimensions d = null;
+////                            d = new Dimensions();
+////                            d.x = 0; d.y = 0; d.width = 480; d.height = 480;
+////                            Log.d(TAG, videourl);
+//                            boolean audioMuted = false;
+//                            boolean autoPlay = false;
+//                            boolean showControls = false;
+//                            boolean repeat = false;
+//                            playVideo(videourl, clickurl, audioMuted, autoPlay, showControls, repeat, null, "fullscreen", "exit");
                         } else if (TYPE_OFFERWALL.equals(typeOfBanner)) {
-                            data = wrapToHTML(data, mBridgeScriptPath, mScriptPath);
+                            data = wrapToHTML(data, false);
                             mContent = data;
                             retData = data;
 //                            loadDataWithBaseURL(data);
@@ -780,7 +752,7 @@ public abstract class AdViewCore extends WebView {
                 
         @Override
         protected void onProgressUpdate (Integer... values) {
-            int state = values[0].intValue();
+            int state = values[0];
 
             if (adDownload != null) {
                 switch(state) {
@@ -806,7 +778,7 @@ public abstract class AdViewCore extends WebView {
                 
     }
         
-    protected String wrapToHTML(String data, String bridgeScriptPath, String scriptPath){
+    protected String wrapToHTML(String data, boolean isMraid){
         String alignment;
         if(adWidth > 0) {
             alignment = "style=\"width:" + adWidth + "px; margin:0 auto; text-align:center;\"";
@@ -814,12 +786,22 @@ public abstract class AdViewCore extends WebView {
         else {
             alignment = "align=\"left\"";
         }
-                
+
+        String mraidTag = "";
+        if (isMraid) {
+            mraidTag = "<script type=\"text/javascript\">" +
+                    "var mraid = {\n" +
+                    "    getState: function() {return \"loading\"},\n" +
+                    "    listeners: [],\n" +
+                    "    addEventListener: function(eventName, callback) { this.listeners.push({eventName:eventName, callback:callback}); }\n" +
+                    "};\n" +
+                    "</script>";
+          mraidTag += "<script src=\"" + mraidBridgePath + "\"></script>";
+        }
         return "<html><head>"
             + "<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no' />"
-            + "<title>Advertisement</title> " 
-//            + "<script src=\"file:/" + bridgeScriptPath + "\" type=\"text/javascript\"></script>"
-//            + "<script src=\"file:/" + scriptPath + "\" type=\"text/javascript\"></script>"
+            + "<title>Advertisement</title> "
+            + mraidTag
             + "</head>"
             + "<body style=\"margin:0; padding:0; overflow:hidden; background-color:transparent;\">"
             + "<div " + alignment + ">"
@@ -840,7 +822,8 @@ public abstract class AdViewCore extends WebView {
         if (lastTimerTask != null)
             lastTimerTask.cancel();
         lastTimerTask = new TimerTask() {
-                        
+
+            @TargetApi(Build.VERSION_CODES.HONEYCOMB) // API 11
             @Override
             public void run() {
                 update(false);
@@ -879,6 +862,7 @@ public abstract class AdViewCore extends WebView {
 
     private class AdWebViewClient extends WebViewClient {
         private Context context;
+        int numPagesLoading = 0;
 
         public AdWebViewClient(Context context) {
             this.context = context;
@@ -887,6 +871,12 @@ public abstract class AdViewCore extends WebView {
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, String url) {
             try {
+                if(url.startsWith("nativecall://")) {
+                    TILog.e("intercepting url load: " + url);
+                  handleNativeMraidCall(url);
+                  return true;
+                }
+
                 adLog.log(AdLog.LOG_LEVEL_2, AdLog.LOG_TYPE_INFO, "OverrideUrlLoading", url);
                 if (adClickListener != null) {
                     adLog.log(AdLog.LOG_LEVEL_2, AdLog.LOG_TYPE_INFO, "OverrideUrlLoading - click", url);
@@ -923,28 +913,39 @@ public abstract class AdViewCore extends WebView {
                     }
                 }
             } catch (Exception e) {
+              Log.e("TapIt", "error while calling shouldOverrideUrlLoading(" + url + ")", e);
                 adLog.log(AdLog.LOG_LEVEL_1, AdLog.LOG_TYPE_ERROR, "shouldOverrideUrlLoading",
                         e.getMessage());
             }
 
+            TILog.e("canceled url: " + url);
             return true;
         }
 
         @Override
         public void onPageStarted(WebView view, String url, Bitmap favicon) {
             super.onPageStarted(view, url, favicon);
-            adLog.log(AdLog.LOG_LEVEL_2, AdLog.LOG_TYPE_INFO, "onPageStarted", url);
+            Log.d("TapIt", "onPageStarted: " + url);
+            numPagesLoading++;
         }
 
         @Override
         public void onPageFinished(WebView view, String url) {
+            numPagesLoading--;
+            Log.d("TapIt", "onPageFinished("+ numPagesLoading +"): " + url);
+            if (numPagesLoading == 0) {
+              if(AdViewCore.this.mraid) {
+                //TODO fire off MRAID events, if ad is MRAID
+//                fireMraidEvent(MraidEvent.READY, (List<?>)null);
+                  if (getMraidState() == MraidState.LOADING) {
+                      fireMraidEvent(MraidEvent.READY, null);
+                      setMraidState(MraidState.DEFAULT);
+                      syncMraidState();
+                      fireMraidEvent(MraidEvent.STATECHANGE, mraidState.value);
+                  }
+              }
             ((AdViewCore) view).onPageFinished();
-
-            adLog.log(AdLog.LOG_LEVEL_2, AdLog.LOG_TYPE_INFO, "onPageFinished", url);
-                        
-//            if (adDownload != null) {
-//                adDownload.end();
-//            }
+            }
         }
 
         @Override
@@ -956,12 +957,12 @@ public abstract class AdViewCore extends WebView {
                     adDownload.error((AdViewCore)view, description);
                 }
             } catch (Exception e){
-                Log.e("TapIt", "An error occured", e);
+                Log.e("TapIt", "An error occurred", e);
             }
         }
     }
 
-    WebChromeClient mWebChromeClient = new WebChromeClient() {
+    protected WebChromeClient mWebChromeClient = new WebChromeClient() {
         @Override
         public boolean onJsAlert(WebView view, String url, String message, JsResult result) {
             result.confirm();
@@ -1056,7 +1057,7 @@ public abstract class AdViewCore extends WebView {
     }
 
     private static String readInputStream(BufferedInputStream in) throws IOException {
-        StringBuffer out = new StringBuffer();
+        StringBuilder out = new StringBuilder();
         byte[] buffer = new byte[8192];
         for (int n; (n = in.read(buffer)) != -1;) {
             out.append(new String(buffer, 0, n));
@@ -1086,6 +1087,117 @@ public abstract class AdViewCore extends WebView {
 
     public String getState() {
         return mViewState.toString().toLowerCase();
+    }
+
+    public void resize(int height, int width, boolean isModal, String twoPartCreativeUrl) {
+//        ((Activity)getContext()).getWindow().setFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
+//                WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS );
+        FrameLayout rootView = (FrameLayout)getRootView().findViewById(android.R.id.content);
+
+        if (placeholderView == null) {
+            // pull the ad out of the view hierarchy and put it on top of the stack
+            placeholderView = new FrameLayout(this.getContext());
+            placeholderView.setBackgroundColor(Color.RED);
+            swapViews(this, placeholderView);
+        }
+
+        rootView.bringToFront();
+//        int scaledWidth = (int)(width * mDensity + 0.5f);
+//        int scaledHeight = (int)(height * mDensity + 0.5f);
+//        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(scaledWidth, scaledHeight);
+//        params.gravity = Gravity.CENTER;
+        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
+                width,
+                height - 300,  //TODO get rid of debugging code! just use height
+                Gravity.CENTER
+        );
+        rootView.addView(this, params);
+
+        TILog.d(params.width + ", " + params.height);
+//        this.setLayoutParams(params);
+
+//        rootView.setBackgroundColor(Color.GRAY);
+//        setBackgroundColor(Color.GREEN);
+        cancelUpdating();
+    }
+
+    public void resize_old(int x, int y, int height, int width) {
+        FrameLayout rootView = (FrameLayout)getRootView().findViewById(android.R.id.content);
+        rootView.bringToFront();
+//        int scaledWidth = (int)(width * mDensity + 0.5f);
+//        int scaledHeight = (int)(height * mDensity + 0.5f);
+//        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(scaledWidth, scaledHeight);
+//        params.gravity = Gravity.CENTER;
+        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
+                width,
+                height,
+                Gravity.CENTER
+        );
+
+        ViewGroup parent = (ViewGroup) getParent();
+        parent.removeView(this);
+        rootView.addView(this, params);
+
+        TILog.d(params.width + ", " + params.height);
+        this.setLayoutParams(params);
+
+        rootView.setBackgroundColor(Color.GRAY);
+    }
+
+    public void mraidClose() {
+        TILog.d("Close Command!");
+
+        if (placeholderView != null) {
+            swapViews(placeholderView, this);
+            placeholderView = null;
+        }
+
+        if (MraidState.DEFAULT.equals(getMraidState())) {
+            setMraidState(MraidState.HIDDEN);
+            setVisibility(View.GONE);
+        }
+        else {
+            setMraidState(MraidState.DEFAULT);
+        }
+        fireMraidEvent(MraidEvent.STATECHANGE, mraidState.value);
+        syncMraidState();
+
+        scheduleUpdate();
+    }
+
+    /**
+     * Pulls viewInLayout out of the view hierarchy, placing altView in it's place.
+     * @param viewInLayout the view that's currently in the hierarchy.
+     * View will be left w/o a parent.
+     * @param altView the view that will replace viewInLayout's position in hierarchy.
+     * This view will assume all layout params of viewInLayout
+     */
+    private static void swapViews(ViewGroup viewInLayout, ViewGroup altView) {
+        ViewGroup parent = (ViewGroup) viewInLayout.getParent();
+        if (parent == null) {
+            TILog.w("Failed to swapViews because viewInLayout has no parent");
+            return;
+        }
+
+        int index;
+        int count = parent.getChildCount();
+        for (index = 0; index < count; index++) {
+            if (parent.getChildAt(index) == viewInLayout) {
+                break;
+            }
+        }
+
+        parent.removeView(viewInLayout);
+        ViewGroup.LayoutParams lp = viewInLayout.getLayoutParams();
+//        ViewGroup.LayoutParams lp = new ViewGroup.LayoutParams(
+//                viewInLayout.getWidth(),
+//                viewInLayout.getHeight()
+//        );
+        ViewGroup altParent = (ViewGroup)altView.getParent();
+        if(altParent != null) {
+            altParent.removeView(altView);
+        }
+        parent.addView(altView, index, lp);
     }
 
     public void resize(int width, int height) {
@@ -1149,6 +1261,14 @@ public abstract class AdViewCore extends WebView {
 //        msg.setData(data);
 //
 //        mHandler.sendMessage(msg);
+    }
+
+    public void useCustomCloseButton(boolean useCustomClose) {
+        //TODO implement me!
+    }
+
+    public void open(String url) {
+        open(url, true, true, true);
     }
         
     /**
@@ -1286,17 +1406,7 @@ public abstract class AdViewCore extends WebView {
                     animateBack = false;
                 }
             });
-        } else {
-                        
         }
-    }
-        
-    /**
-     * Sets the script path.
-     */
-    private synchronized void setScriptPath() {
-        mScriptPath = "//android_asset/ormma.js";
-        mBridgeScriptPath = "//android_asset/ormma_bridge.js";
     }
 
 
@@ -1306,8 +1416,6 @@ public abstract class AdViewCore extends WebView {
 
     /**
      * Required. Set the id of the zone of publisher site.
-     * 
-     * @param zone
      */
     public void setZone(String zone) {
         if (adRequest != null) {
@@ -1328,8 +1436,6 @@ public abstract class AdViewCore extends WebView {
 
     /**
      * Optional. Set the adtype of the advertise.
-     * 
-     * @param adtype
      */
     public void setAdtype(String adtype) {
         if (adRequest != null) {
@@ -1351,8 +1457,6 @@ public abstract class AdViewCore extends WebView {
     /**
      * @deprecated
      * Optional. Set minimum width of advertising.
-     * 
-     * @param minSizeX
      */
     public void setMinSizeX(Integer minSizeX) {
         if ((adRequest != null)) {
@@ -1375,8 +1479,6 @@ public abstract class AdViewCore extends WebView {
     /**
      * @deprecated
      * Optional. Set minimum height of advertising.
-     * 
-     * @param minSizeY
      */
     public void setMinSizeY(Integer minSizeY) {
         if ((adRequest != null)) {
@@ -1399,8 +1501,6 @@ public abstract class AdViewCore extends WebView {
     /**
      * @deprecated
      * Optional. Set maximum width of advertising.
-     * 
-     * @param maxSizeX
      */
     public void setMaxSizeX(Integer maxSizeX) {
         if ((adRequest != null)) {
@@ -1423,8 +1523,6 @@ public abstract class AdViewCore extends WebView {
     /**
      * @deprecated
      * Optional. Set maximum height of advertising.
-     * 
-     * @param maxSizeY
      */
     public void setMaxSizeY(Integer maxSizeY) {
         if ((adRequest != null)) {
@@ -1446,8 +1544,6 @@ public abstract class AdViewCore extends WebView {
 
     /**
      * Optional. Set Background color of advertising in HEX.
-     * 
-     * @param backgroundColor
      */
     public void setBackgroundColor(String backgroundColor) {
         try {
@@ -1488,8 +1584,6 @@ public abstract class AdViewCore extends WebView {
 
     /**
      * Optional. Set Text color of links in HEX.
-     * 
-     * @param textColor
      */
     public void setTextColor(String textColor) {
         if (adRequest != null) {
@@ -1510,8 +1604,6 @@ public abstract class AdViewCore extends WebView {
 
     /**
      * Optional. Overrides the URL of ad server.
-     * 
-     * @param adserverURL
      */
     public void setAdserverURL(String adserverURL) {
         if (adRequest != null) {
@@ -1533,8 +1625,6 @@ public abstract class AdViewCore extends WebView {
     /**
      * Optional. Set user location latitude value (given in degrees.decimal
      * degrees).
-     * 
-     * @param latitude
      */
     public void setLatitude(String latitude) {
         if ((adRequest != null) && (latitude != null)) {
@@ -1563,8 +1653,6 @@ public abstract class AdViewCore extends WebView {
     /**
      * Optional. Set user location longtitude value (given in degrees.decimal
      * degrees).
-     * 
-     * @param longitude
      */
     public void setLongitude(String longitude) {
         if ((adRequest != null) && (longitude != null)) {
@@ -1600,22 +1688,19 @@ public abstract class AdViewCore extends WebView {
      * AdLog.LOG_LEVEL_1     only errors<br>
      * AdLog.LOG_LEVEL_2     +warning<br>
      * AdLog.LOG_LEVEL_3     +server traffic<br>
-     *
-     * @param logLevel
      */
     public void setLogLevel(int logLevel) {
         adLog.setLogLevel(logLevel);
     }
-        
+
     /**
      * Whether to open pages in internal browser or in system browser.
      * Defaul values is true.
-     * @param b
      */
     public void setOpenInInternalBrowser(boolean b){
         openInInternalBrowser = b;
     }
-        
+
     public void raiseError(String strMsg, String action){
         throw new UnsupportedOperationException("Can't raise error: " + strMsg + "; " + action);
 //        Message msg = mHandler.obtainMessage(MESSAGE_RAISE_ERROR);
@@ -1679,12 +1764,151 @@ public abstract class AdViewCore extends WebView {
     }
 
     // Stub to quell errors relating to stripping out ORMMA
-    protected class Dimensions {
-                
+    static class Dimensions {
+
     }
-        
+
     // Stub to quell errors relating to stripping out ORMMA
-    protected class Properties {
-                
+    static class Properties {
+
+    }
+
+    /////////////////
+    // MRAID Code //
+    ////////////////
+
+
+  public MraidState getMraidState() {
+    return mraidState;
+  }
+
+  public void setMraidState(MraidState mraidState) {
+    this.mraidState = mraidState;
+  }
+
+  /**
+   * Test if html an mraid ad
+   * @param html the html string to test
+   * @return true if mraid, false otherwise
+   */
+    protected boolean checkIfMraid(String html) {
+      return html.toLowerCase().contains("mraid.js");
+    }
+
+  /**
+   * router code to parse and direct native calls to the appropriate
+   * mraid command handler
+   * @param urlStr the request in REST format
+   */
+    protected void handleNativeMraidCall(String urlStr) {
+      Log.d("TapIt", "handleNativeMraidCall(" + urlStr + ")");
+      MraidCommand.routeRequest(urlStr, this);
+    }
+
+    private int commandCounter = 0;
+  /**
+   * Mechanism to send data back to the js mraid bridge.
+   * @param data the data to send
+   * @param callbackToken the token used to mark data as a response to a js request,
+   *                      or null for unsolicited data (e.g. one way comms)
+   */
+    protected void mraidResponse(Map<String, ?> data, String callbackToken) {
+      StringBuilder sb = new StringBuilder("{");
+      if (data != null) {
+//        Log.d("TapIt", "DATA: " + data);
+        boolean isFirst = true;
+        for (Map.Entry<String, ?> entry : data.entrySet()) {
+          if(isFirst) {
+            isFirst = false;
+          }
+          else {
+            sb.append(",");
+          }
+          sb.append(entry.getKey());
+          sb.append(":");
+
+          Object v = entry.getValue();
+          if(v instanceof String) {
+            String vStr = (String)v;
+            if(!vStr.startsWith("{") && !vStr.startsWith("[")) {
+              vStr = String.format("\"%s\"", v);
+            }
+            sb.append(vStr);
+          }
+          else if (v == null) {
+            sb.append("null");
+          }
+          else {
+            sb.append(v);
+          }
+        }
+      }
+      sb.append("}");
+      String dataStr = sb.toString();
+
+      commandCounter++;
+      String jsStr;
+      if (callbackToken != null) {
+        jsStr = String.format("mraid._nativeResponse(%s, \"%s\");console.debug(%d + ': command success!');", dataStr, callbackToken, commandCounter);
+      }
+      else {
+        jsStr = String.format("mraid._nativeResponse(%s);console.debug(%d + ': command success!');", dataStr, commandCounter);
+      }
+
+      Log.d("TapIt", "mraidResponse: " + jsStr);
+      injectJavaScript(jsStr);
+    }
+
+//    protected void fireMraidEvent(MraidEvent mraidEvent, List<?>params) {
+//      Map<String, Object>wrapper = new HashMap<String, Object>();
+//      wrapper.put("name", mraidEvent.value);
+//      if(params != null) {
+//        wrapper.put("props", params);
+//      }
+//
+//      Map<String, Map<String,Object>> data = new HashMap<String, Map<String,Object>>();
+//      data.put("_fire_event_", wrapper);
+//
+//      mraidResponse(data, null);
+//    }
+
+    protected void fireMraidEvent(MraidEvent mraidEvent, String dataString) {
+      if(dataString != null && !dataString.startsWith("[")) {
+        dataString = String.format("[\"%s\"]", dataString);
+      }
+
+      String eventStr;
+      if(dataString != null) {
+        eventStr = String.format("{name:\"%s\", props:%s}", mraidEvent.value, dataString);
+      }
+      else {
+        eventStr = String.format("{name:\"%s\"}", mraidEvent.value);
+      }
+
+      Map<String, String> data = new HashMap<String, String>();
+      data.put("_fire_event_", eventStr);
+      mraidResponse(data, null);
+    }
+
+    protected void syncMraidState() {
+
+      WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+      Display display = wm.getDefaultDisplay();
+      int width = display.getWidth();  // deprecated
+      int height = display.getHeight();  // deprecated
+
+
+
+      HashMap<String, Object> params = new HashMap<String, Object>();
+      params.put("state", mraidState.value);
+      params.put("isVisible", getVisibility() == View.VISIBLE);
+//      params.put("height", (int)(height / mDensity));
+//      params.put("width", (int) (width / mDensity));
+      params.put("height", height);
+      params.put("width", width);
+      params.put("x", 0);
+      params.put("y", 0);
+
+      mraidResponse(params, null);
     }
 }

@@ -24,7 +24,7 @@ public class AdOfferWallView extends AdInterstitialBaseView {
     }
 
     @Override
-    protected String wrapToHTML(String data, String bridgeScriptPath, String scriptPath) {
+    protected String wrapToHTML(String data, boolean isMraid) {
         try {
             JSONObject jsonObject = new JSONObject(data);
             if (!jsonObject.has("type") || !jsonObject.getString("type").equals("offerwall"))

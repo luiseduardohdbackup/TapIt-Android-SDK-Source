@@ -1,13 +1,15 @@
 package com.tapit.adview;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.io.*;
 import java.lang.reflect.Constructor;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 import android.content.Context;
 import android.telephony.TelephonyManager;
@@ -16,6 +18,7 @@ import android.webkit.WebView;
 
 public class Utils {
 
+    private static final Object lock = new Object();
 	private static String userAgent = null;
 	
 	public static String scrape(String resp, String start, String stop) {
@@ -49,24 +52,26 @@ public class Utils {
 		return hexString.toString();
 	}
 
-	public static String getUserAgentString(Context context) {
-		if (userAgent == null) {
-			try {
-				Constructor<WebSettings> constructor = WebSettings.class.getDeclaredConstructor(
-						Context.class, WebView.class);
-				constructor.setAccessible(true);
-				try {
-					WebSettings settings = constructor.newInstance(context, null);
-					userAgent = settings.getUserAgentString();
-				} finally {
-					constructor.setAccessible(false);
-				}
-			} catch (Exception e) {
-				userAgent = new WebView(context).getSettings().getUserAgentString();
-			}
-		}
-		return userAgent;
-	}
+    public static String getUserAgentString(Context context) {
+        if (userAgent == null) {
+            synchronized (lock) {
+                try {
+                    Constructor<WebSettings> constructor = WebSettings.class.getDeclaredConstructor(
+                            Context.class, WebView.class);
+                    constructor.setAccessible(true);
+                    try {
+                        WebSettings settings = constructor.newInstance(context, null);
+                        userAgent = settings.getUserAgentString();
+                    } finally {
+                        constructor.setAccessible(false);
+                    }
+                } catch (Exception e) {
+                    userAgent = new WebView(context).getSettings().getUserAgentString();
+                }
+            }
+        }
+        return userAgent;
+    }
 
 	private static String sID = null;
 	private static final String INSTALLATION = "INSTALLATION";
@@ -127,7 +132,7 @@ public class Utils {
 	
 	public static String getDeviceIdMD5(Context context){
 	    String udid = getDeviceId(context);
-	    if(udid != "unknown") {
+	    if(!"unknown".equals(udid)) {
 	        udid = Utils.md5(udid);
 	    }
 	    return udid;
@@ -142,6 +147,45 @@ public class Utils {
 		TelephonyManager manager = (TelephonyManager)context.getSystemService(Context.TELEPHONY_SERVICE);
 		return manager.getNetworkOperator();
 	}
+
+    private static final Pattern QUESTION_MARK_PATTERN = Pattern.compile("\\?");
+    private static final Pattern AMPERSTAND_PATTERN = Pattern.compile("&");
+    private static final Pattern EQUALS_PATTERN = Pattern.compile("=");
+
+    public static Map<String,String> parseUrlParams(String url) throws UnsupportedEncodingException {
+        Map<String, String> params = new HashMap<String, String>();
+        String parts[] = QUESTION_MARK_PATTERN.split(url, 2);
+        if(parts.length > 1) {
+            for(String p : AMPERSTAND_PATTERN.split(parts[1])) {
+                String kv[] = EQUALS_PATTERN.split(p);
+                String key = URLDecoder.decode(kv[0], "UTF-8");
+                String val = URLDecoder.decode(kv[1], "UTF-8");
+                params.put(key,val); // possible overwrite of value if duplicates exist in qs
+            }
+        }
+        return params;
+    }
+
+    public static String appendUrlParams(Map<String, String> params) {
+        final StringBuilder sb = new StringBuilder(params.size() * 6);
+        boolean first = true;
+        for(Map.Entry<String, String> entry : params.entrySet()) {
+            try {
+                if (first) {
+                    first = false;
+                }
+                else {
+                    sb.append("&");
+                }
+                String key = URLEncoder.encode(entry.getKey(), "UTF-8");
+                String val = URLEncoder.encode(entry.getValue(), "UTF-8");
+                sb.append(key).append("=").append(val);
+            } catch (UnsupportedEncodingException e) {
+                TILog.e("Failed to url encode values: " + entry);
+            }
+        }
+        return sb.toString();
+    }
 
     public static String getStringResource(final Context ctx, final String name) {
         if(name == null || !name.startsWith("@string/")) {
