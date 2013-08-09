@@ -212,6 +212,10 @@ public abstract class AdInterstitialBaseView extends AdView implements OnAdDownl
     @Override
     public void willDismissFullScreen(AdViewCore adView) {
         // noop
+//        if(interstitialListener != null) {
+//            interstitialListener.didClose(adView);
+//        }
+
     }
 
     public OnInterstitialAdDownload getOnInterstitialAdDownload() {
@@ -242,6 +246,7 @@ public abstract class AdInterstitialBaseView extends AdView implements OnAdDownl
      */
     public void interstitialClosing() {
         // no-op
+        TILog.d("AdInterstitialBaseView.interstitialClosing()");
     }
 
     @Override

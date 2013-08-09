@@ -10,7 +10,9 @@ import android.widget.RelativeLayout;
 /**
  * Viewer of full screen advertising. Presents full screen advertising during
  * some time, cannot be closed before timeout expiration
+ * @deprecated use {@link AdInterstitialView} instead
  */
+@Deprecated
 public class AdFullscreenView extends AdInterstitialBaseView {
 	
 	private ImageButton transparentButton;

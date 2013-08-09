@@ -13,7 +13,9 @@ import android.widget.RelativeLayout;
 /**
  * Viewer of OfferWall advertising. Presents list of offer-advertising list in
  * full screen mode
+ * @deprecated use {@link AdInterstitialView} instead
  */
+@Deprecated
 public class AdOfferWallView extends AdInterstitialBaseView {
 
     private Button closeButton;

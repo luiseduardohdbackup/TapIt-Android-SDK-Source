@@ -31,7 +31,9 @@ import android.widget.RelativeLayout;
 /**
  * Viewer of video advertising. Presents full screen video advertising during
  * some time, cannot be closed before timeout expiration
+ * @deprecated use {@link AdInterstitialView} instead
  */
+@Deprecated
 public class AdVideoUnitView extends AdInterstitialBaseView {
 	
 	private Handler handler = new Handler();

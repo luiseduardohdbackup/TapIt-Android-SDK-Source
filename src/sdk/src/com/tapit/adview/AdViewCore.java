@@ -8,7 +8,6 @@ import java.util.*;
 import android.annotation.TargetApi;
 import android.os.Build;
 import android.view.*;
-import android.widget.RelativeLayout;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -1779,7 +1778,7 @@ public abstract class AdViewCore extends WebView {
       MraidCommand.routeRequest(urlStr, this);
     }
 
-    private int commandCounter = 0;
+    private int commandCounter = 0; //TODO remove debugging code
   /**
    * Mechanism to send data back to the js mraid bridge.
    * @param data the data to send
@@ -1823,28 +1822,17 @@ public abstract class AdViewCore extends WebView {
       commandCounter++;
       String jsStr;
       if (callbackToken != null) {
+          //TODO remove debugging code!
         jsStr = String.format("mraid._nativeResponse(%s, \"%s\");console.debug(%d + ': command success!');", dataStr, callbackToken, commandCounter);
       }
       else {
+          //TODO remove debugging code!
         jsStr = String.format("mraid._nativeResponse(%s);console.debug(%d + ': command success!');", dataStr, commandCounter);
       }
 
       Log.d("TapIt", "mraidResponse: " + jsStr);
       injectJavaScript(jsStr);
     }
-
-//    protected void fireMraidEvent(MraidEvent mraidEvent, List<?>params) {
-//      Map<String, Object>wrapper = new HashMap<String, Object>();
-//      wrapper.put("name", mraidEvent.value);
-//      if(params != null) {
-//        wrapper.put("props", params);
-//      }
-//
-//      Map<String, Map<String,Object>> data = new HashMap<String, Map<String,Object>>();
-//      data.put("_fire_event_", wrapper);
-//
-//      mraidResponse(data, null);
-//    }
 
     protected void fireMraidEvent(MraidEvent mraidEvent, String dataString) {
       if(dataString != null && !dataString.startsWith("[")) {
@@ -1868,15 +1856,13 @@ public abstract class AdViewCore extends WebView {
 
         WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
         Display display = wm.getDefaultDisplay();
-        int width = display.getWidth();  // deprecated
-        int height = display.getHeight();  // deprecated
+        int width = display.getWidth();
+        int height = display.getHeight();
 
 
         HashMap<String, Object> params = new HashMap<String, Object>();
         params.put("state", mraidState.value);
         params.put("isVisible", getVisibility() == View.VISIBLE);
-//      params.put("height", (int)(height / mDensity));
-//      params.put("width", (int) (width / mDensity));
         params.put("height", height);
         params.put("width", width);
         params.put("x", 0);

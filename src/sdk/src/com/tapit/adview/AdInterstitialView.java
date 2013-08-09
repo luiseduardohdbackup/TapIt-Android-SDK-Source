@@ -5,6 +5,7 @@ import android.graphics.Color;
 import android.graphics.drawable.StateListDrawable;
 import android.util.Log;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.RelativeLayout;
 
@@ -31,6 +32,10 @@ public class AdInterstitialView extends AdInterstitialBaseView {
         final RelativeLayout.LayoutParams adViewLayout = new RelativeLayout.LayoutParams(
                 RelativeLayout.LayoutParams.FILL_PARENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
         adViewLayout.addRule(RelativeLayout.CENTER_IN_PARENT);
+        ViewGroup parent = (ViewGroup)this.getParent();
+        if (parent != null) {
+            parent.removeView(this);
+        }
         interstitialLayout.addView(this, adViewLayout);
         showInterstitialCloseButton();
         return interstitialLayout;
@@ -62,7 +67,10 @@ public class AdInterstitialView extends AdInterstitialBaseView {
                 buttonSize, buttonSize);
         buttonLayout.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
         buttonLayout.setMargins(buttonPadding, 0, buttonPadding, 0);
-        interstitialLayout.removeView(closeButton);
+        ViewGroup parent = (ViewGroup)closeButton.getParent();
+        if(parent != null) {
+            parent.removeView(closeButton);
+        }
         interstitialLayout.addView(closeButton, buttonLayout);
     }
 

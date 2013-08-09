@@ -1,7 +1,5 @@
 package com.tapit.adview;
 
-import android.util.Log;
-
 import java.io.UnsupportedEncodingException;
 import java.util.*;
 import java.util.regex.Pattern;
