@@ -14,6 +14,7 @@ import android.os.Bundle;
 import android.os.Looper;
 import android.telephony.TelephonyManager;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.Display;
 
 import java.util.Map;
@@ -39,7 +40,8 @@ public class AdView extends AdViewCore {
         LARGE_BANNER        (216,  36),
         XL_BANNER           (300,  50),
         IPHONE_BANNER       (320,  50),
-        MEDIUM_RECTANGLE    (300,  250);
+        MEDIUM_RECTANGLE    (300,  250),
+        LEADERBOARD         (728,  90);
 
         public final int width;
         public final int height;
@@ -103,7 +105,7 @@ public class AdView extends AdViewCore {
     }
 
     private void initialize(Context context) {
-        setAdSize(BannerAdSize.AUTOSIZE_AD); // default to auto-sizing banner
+        adSize = BannerAdSize.AUTOSIZE_AD;
         if (adRequest != null) {
             AutoDetectedParametersSet autoDetectedParametersSet = AutoDetectedParametersSet
                     .getInstance();
@@ -149,12 +151,12 @@ public class AdView extends AdViewCore {
             Map<String, String> params = adRequest.getCustomParameters();
             params.put("o", orientation);
 
-            int adWidth = getWidth();
+            int adWidth = (int)(getWidth() / mDensity);
             if(adWidth <= 0) {
                 // if not width is set on view, use screen width
                 adWidth = screenWidth;
             }
-            int adHeight = getHeight();
+            int adHeight = (int)(getHeight() / mDensity);
             if(adHeight <= 0) {
                 // if no height is set on view, use screen height
                 adHeight = screenHeight;

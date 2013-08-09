@@ -1,7 +1,7 @@
 TapIt Android SDK
 =================
 
-Version 1.7.6
+Version 1.7.8
 
 This is the Android SDK for the TapIt! mobile ad network. Go to http://tapit.com/ for more details and to sign up.
 

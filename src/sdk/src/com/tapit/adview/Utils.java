@@ -142,4 +142,18 @@ public class Utils {
 		TelephonyManager manager = (TelephonyManager)context.getSystemService(Context.TELEPHONY_SERVICE);
 		return manager.getNetworkOperator();
 	}
+
+    public static String getStringResource(final Context ctx, final String name) {
+        if(name == null || !name.startsWith("@string/")) {
+            return name;
+        }
+
+        final String propName = name.substring(8);
+        int resId = ctx.getResources().getIdentifier(propName, "string", ctx.getPackageName());
+        if (resId > 0) {
+            return ctx.getResources().getString(resId);
+        }
+
+        return null;
+    }
 }

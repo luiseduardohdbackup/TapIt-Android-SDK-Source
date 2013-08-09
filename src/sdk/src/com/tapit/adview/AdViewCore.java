@@ -53,7 +53,7 @@ import android.widget.Toast;
  * Viewer of advertising.
  */
 public abstract class AdViewCore extends WebView {
-    public static final String VERSION = "1.7.7";
+    public static final String VERSION = "1.7.8";
     public static final String TAG = "AdViewCore";
 
     private static final long AD_DEFAULT_RELOAD_PERIOD = 120000; // milliseconds
@@ -67,13 +67,13 @@ public abstract class AdViewCore extends WebView {
     private long adReloadPeriod = AD_DEFAULT_RELOAD_PERIOD;
     private OnAdDownload adDownload;
 
-    private float mDensity; // screen pixel density
+    protected float mDensity; // screen pixel density
 //    private int mDefaultHeight; // default height of the view
 //    private int mDefaultWidth; // default width of the view
     private int mInitLayoutHeight; // initial height of the view
     private int mInitLayoutWidth; // initial height of the view
-    private int adHeight; // ad height, as reported by server
-    private int adWidth; // ad width, as reported by server
+    private int adHeight = -1; // ad height, as reported by server
+    private int adWidth = -1; // ad width, as reported by server
     private int mIndex; // index of the view within its viewgroup
 
     private String mClickURL;
@@ -400,13 +400,13 @@ public abstract class AdViewCore extends WebView {
 
     private void initialize(Context context, AttributeSet attrs) {
         if (attrs != null) {
-            String zone = attrs.getAttributeValue(null, "zone");
-            String keywords = attrs.getAttributeValue(null, "keywords");
-            String latitude = attrs.getAttributeValue(null, "latitude");
-            String longitude = attrs.getAttributeValue(null, "longitude");
-            String ua = attrs.getAttributeValue(null, "ua");
-            String paramBG = attrs.getAttributeValue(null, "paramBG");
-            String paramLINK = attrs.getAttributeValue(null, "paramLINK");
+            String zone = Utils.getStringResource(context, attrs.getAttributeValue(null, "zone"));
+            String keywords = Utils.getStringResource(context, attrs.getAttributeValue(null, "keywords"));
+            String latitude = Utils.getStringResource(context, attrs.getAttributeValue(null, "latitude"));
+            String longitude = Utils.getStringResource(context, attrs.getAttributeValue(null, "longitude"));
+            String ua = Utils.getStringResource(context, attrs.getAttributeValue(null, "ua"));
+            String paramBG = Utils.getStringResource(context, attrs.getAttributeValue(null, "paramBG"));
+            String paramLINK = Utils.getStringResource(context, attrs.getAttributeValue(null, "paramLINK"));
             Integer defaultImage = attrs.getAttributeResourceValue(null, "defaultImage", -1);
             Long p = getLongParameter(attrs.getAttributeValue(null, "adReloadPeriod"));
             if (p != null)
@@ -496,9 +496,13 @@ public abstract class AdViewCore extends WebView {
         }
 
         if (isFirstTime){
-            contentTask = new LoadContentTask(this, false);
             adLog.log(AdLog.LOG_LEVEL_3, AdLog.LOG_TYPE_INFO, "onAttachedToWindow", "isFirstTime is true. Called LoadContentTask");
-            contentTask.execute(0);
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    update(false);
+                }
+            });
         }
                 
         super.onAttachedToWindow();
@@ -544,7 +548,7 @@ public abstract class AdViewCore extends WebView {
      * Immediately update banner contents.
      */
     public void update(boolean forced) {
-        contentTask = new LoadContentTask(this, forced);
+        contentTask = new LoadContentTask((AdView)this, forced);
         contentTask.execute(0);
     }
 
@@ -555,11 +559,11 @@ public abstract class AdViewCore extends WebView {
         private static final int ERROR_STATE = 2;
 
         private boolean forced;
-        private WebView view;
+        private AdView view;
         private String error;
         private String requestUrl;
                 
-        public LoadContentTask(WebView view, boolean forced) {
+        public LoadContentTask(AdView view, boolean forced) {
             this.forced = forced;
             this.view = view;
         }
@@ -608,6 +612,7 @@ public abstract class AdViewCore extends WebView {
                 String data = null;
                 String videourl = null;
                 String clickurl = null;
+                view.setAdSize(AdView.BannerAdSize.AUTOSIZE_AD);
                 final String url = adRequest.createURL();
                 requestUrl = url;
                 try {
@@ -836,8 +841,7 @@ public abstract class AdViewCore extends WebView {
                         
             @Override
             public void run() {
-                contentTask = new LoadContentTask(AdViewCore.this, false);
-                contentTask.execute(0);
+                update(false);
             }
         };
                 
@@ -1649,8 +1653,15 @@ public abstract class AdViewCore extends WebView {
     public boolean isBannerAnimationEnabled(){
         return isBannerAnimationEnabled;
     }
-        
-        
+
+    public int getAdHeight() {
+        return adHeight;
+    }
+
+    public int getAdWidth() {
+        return adWidth;
+    }
+
     /**
      * Convenience method for loading html as a string, and setting the background color
      *  
