@@ -20,7 +20,6 @@ import java.util.Map;
 public class TapItTestActivity extends Activity {
 
     public final static String BANNER_ZONE_ID = "7979";
-    public final static String VIDEO_ZONE_ID = "7981";
     public final static String MED_RECT_ZONE_ID = "7982";
     public final static String INTRS_ZONE_ID = "7983";
     public final static String ADPROMPT_ZONE_ID = "7984";
@@ -56,10 +55,11 @@ public class TapItTestActivity extends Activity {
 
         // the remainder of this method is optional...
 
-        Map<String, String> params = new HashMap<String, String>();
+        // Optionally specify custom params
+        // un-comment to enable test mode
+//        Map<String, String> params = new HashMap<String, String>();
 //        params.put("mode", "test");
-        params.put("cid", "148108");
-        bannerAd.setCustomParameters(params);
+//        bannerAd.setCustomParameters(params);
 
         // if you're interested in being updated with banner ad lifecycle events, register a listener
         bannerAd.setOnAdDownload(new OnAdDownload() {
@@ -127,6 +127,7 @@ public class TapItTestActivity extends Activity {
         // the remainder of this method is optional...
 
         // send optional params to the AdPrompt
+        // un-comment to enable test mode
 //        Map<String, String> params = new HashMap<String, String>();
 //        params.put("mode", "test");
 //        adPrompt.setCustomParameters(params);
@@ -190,10 +191,9 @@ public class TapItTestActivity extends Activity {
 
         // Optionally specify custom params
         // un-comment to enable test mode
-        Map<String, String> params = new HashMap<String, String>();
+//        Map<String, String> params = new HashMap<String, String>();
 //        params.put("mode", "test");
-        params.put("cid", "148138");
-        interstitialAd.setCustomParameters(params);
+//        interstitialAd.setCustomParameters(params);
 
         // Optionally register a listener to get ad lifecycle notifications.
         interstitialAd.setOnInterstitialAdDownload(new OnInterstitialAdDownload() {

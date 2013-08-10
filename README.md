@@ -13,13 +13,13 @@ This is the Android SDK for the TapIt! mobile ad network. Go to http://tapit.com
 
 Usage:
 ------
-To install, extract the SDK archive(https://github.com/tapit/TapIt-Android-SDK-Source/raw/master/dist/TapItSDK-android.zip) into your project's ```/lib``` folder, and add TapItAdView.jar into the project's build path:
+To install, extract the SDK archive(https://github.com/tapit/TapIt-Android-SDK-Source/raw/mraid/dist/TapItSDK-android.zip) into your project's ```/lib``` folder, and add TapItAdView.jar into the project's build path:
 
-![Add TapItAdView.jar to Build Path](https://raw.github.com/tapit/TapIt-Android-SDK-Source/master/doc/assets/add_jar.png)
+![Add TapItAdView.jar to Build Path](https://raw.github.com/tapit/TapIt-Android-SDK-Source/mraid/doc/assets/add_jar.png)
 
 Set TapItAdView.jar to be exported as part of your apk file:
 
-![Export TapItAdView.jar](https://raw.github.com/tapit/TapIt-Android-SDK-Source/master/doc/assets/export_jar.png)
+![Export TapItAdView.jar](https://raw.github.com/tapit/TapIt-Android-SDK-Source/mraid/doc/assets/export_jar.png)
 
 
 ````xml
@@ -40,13 +40,13 @@ Set TapItAdView.jar to be exported as part of your apk file:
 ````
 Your manifest should look something like this:
 
-![Example manifest](https://raw.github.com/tapit/TapIt-Android-SDK-Source/master/doc/assets/manifest.png)
+![Example manifest](https://raw.github.com/tapit/TapIt-Android-SDK-Source/mraid/doc/assets/manifest.png)
 
-See https://github.com/tapit/TapIt-Android-SDK-Source/blob/master/src/example/AndroidManifest.xml for an example manifest file.
+See https://github.com/tapit/TapIt-Android-SDK-Source/blob/mraid/src/example/AndroidManifest.xml for an example manifest file.
 
 **NOTE:** Zones correspond to a specific ad type, which is specified through the TapIt dashboard.  Please ensure that you use the correct Zone ID for your ad units or you may experience un-expected results.
 
-A sample project is included in this repo.  See https://github.com/tapit/TapIt-Android-SDK-Source/tree/master/src/example for a live demo.
+A sample project is included in this repo.  See https://github.com/tapit/TapIt-Android-SDK-Source/tree/mraid/src/example for a live demo.
 
 AdPrompt Usage
 --------------
@@ -57,7 +57,7 @@ AdPrompt adPrompt = new AdPrompt(this, "YOUR_ZONE_ID");
 adPrompt.showAdPrompt();
 ````
 
-Sample implementation can be found here: https://github.com/tapit/TapIt-Android-SDK-Source/blob/master/src/example/src/com/yourcompany/TapItTestActivity.java#L178
+Sample implementation can be found here: https://github.com/tapit/TapIt-Android-SDK-Source/blob/mraid/src/example/src/com/yourcompany/TapItTestActivity.java#L124
 
 
 Banner Usage
@@ -121,7 +121,7 @@ bannerAd.setOnAdDownload(new OnAdDownload() {
 });
 ````
 
-Sample implementation can be found here: https://github.com/tapit/TapIt-Android-SDK-Source/blob/master/src/example/src/com/yourcompany/TapItTestActivity.java#L59
+Sample implementation can be found here: https://github.com/tapit/TapIt-Android-SDK-Source/blob/mraid/src/example/src/com/yourcompany/TapItTestActivity.java#L52
 
 
 Interstitial Usage
@@ -197,7 +197,7 @@ interstitialAd.setOnInterstitialAdDownload(new OnInterstitialAdDownload() {
 interstitialAd.load(); // request an ad from the server, to be displayed later...
 ````
 
-Sample implementation can be found here: https://github.com/tapit/TapIt-Android-SDK-Source/blob/master/src/example/src/com/yourcompany/TapItTestActivity.java#L191
+Sample implementation can be found here: https://github.com/tapit/TapIt-Android-SDK-Source/blob/mraid/src/example/src/com/yourcompany/TapItTestActivity.java#L189
 
 
 Video Ads Usage
@@ -293,4 +293,4 @@ Essentially, what needs to be included in the code are as follows:
 ProGuard Settings
 -----------------
 Recommended ProGuard settings can be found here:
-https://github.com/tapit/TapIt-Android-SDK-Source/blob/master/src/example/proguard-project.txt
+https://github.com/tapit/TapIt-Android-SDK-Source/blob/mraid/src/example/proguard-project.txt
