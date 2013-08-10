@@ -246,7 +246,6 @@ public abstract class AdInterstitialBaseView extends AdView implements OnAdDownl
      */
     public void interstitialClosing() {
         // no-op
-        TILog.d("AdInterstitialBaseView.interstitialClosing()");
     }
 
     @Override

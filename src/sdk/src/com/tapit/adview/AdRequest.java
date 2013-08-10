@@ -30,7 +30,8 @@ public class AdRequest {
     private static final String PARAMETER_CARRIER_ID = "carrier_id";
     public final static String PARAMETER_DEVICE_ID = "udid";
 
-    private String adserverURL = "http://r.tapit.com/adrequest.php";
+//    private String adserverURL = "http://r.tapit.com/adrequest.php";
+    private String adserverURL = "http://dev.tapit.com/~npenteado/adrequest.php";
 
     private Map<String, String> customParameters = Collections.synchronizedMap(new HashMap<String, String>());
 

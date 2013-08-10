@@ -1,7 +1,9 @@
 TapIt Android SDK
 =================
 
-Version 1.7.9
+Version 2.0.0 BETA
+
+*** This branch contains software in BETA.  Please use the code in the master branch when deploying your app ***
 
 This is the Android SDK for the TapIt! mobile ad network. Go to http://tapit.com/ for more details and to sign up.
 

@@ -75,7 +75,6 @@ public class AdInterstitialView extends AdInterstitialBaseView {
     }
 
     public void useCustomCloseButton(boolean useCustomClose) {
-        TILog.e("useCustomCloseButton from INTERSTITIAL!");
         int visiblity = useCustomClose ? GONE : VISIBLE;
         closeButton.setVisibility(visiblity);
     }

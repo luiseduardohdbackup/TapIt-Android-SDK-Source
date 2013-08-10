@@ -117,7 +117,10 @@ public class AdActivity extends Activity {
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_BACK) {
-                finish();
+            if (adView != null) {
+                adView.onKeyDown(keyCode, event);
+            }
+            finish();
             return true;
         }
         return false;

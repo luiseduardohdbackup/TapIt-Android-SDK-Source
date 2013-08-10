@@ -9,7 +9,6 @@ public enum MraidCommand implements IMraidCommand {
         @Override
         public void execute(Map<String, String> params, AdViewCore adView) {
             // tell adView to close
-            TILog.d("Close called!");
             adView.mraidClose();
         }
     }),
@@ -18,7 +17,6 @@ public enum MraidCommand implements IMraidCommand {
         @Override
         public void execute(Map<String, String> params, AdViewCore adView) {
             // tell adview to expand to full screen
-            TILog.d("Expand command called with params: " + params);
             int height = Integer.parseInt(params.get("height"));
             int width = Integer.parseInt(params.get("width"));
             boolean useCustomClose = "true".equalsIgnoreCase(params.get("useCustomClose"));
@@ -37,7 +35,6 @@ public enum MraidCommand implements IMraidCommand {
         public void execute(Map<String, String> params, AdViewCore adView) {
             // tell adview to open url in in-app browser
             String url = params.get("url");
-            TILog.d("open(" + url + ")");
             adView.open(url);
         }
     }),

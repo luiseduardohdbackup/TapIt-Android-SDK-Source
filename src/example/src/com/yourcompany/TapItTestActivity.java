@@ -2,6 +2,7 @@ package com.yourcompany;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -55,9 +56,10 @@ public class TapItTestActivity extends Activity {
 
         // the remainder of this method is optional...
 
-//        Map<String, String> params = new HashMap<String, String>();
+        Map<String, String> params = new HashMap<String, String>();
 //        params.put("mode", "test");
-//        bannerAd.setCustomParameters(params);
+        params.put("cid", "148108");
+        bannerAd.setCustomParameters(params);
 
         // if you're interested in being updated with banner ad lifecycle events, register a listener
         bannerAd.setOnAdDownload(new OnAdDownload() {
@@ -188,9 +190,10 @@ public class TapItTestActivity extends Activity {
 
         // Optionally specify custom params
         // un-comment to enable test mode
-//        Map<String, String> params = new HashMap<String, String>();
+        Map<String, String> params = new HashMap<String, String>();
 //        params.put("mode", "test");
-//        interstitialAd.setCustomParameters(params);
+        params.put("cid", "148138");
+        interstitialAd.setCustomParameters(params);
 
         // Optionally register a listener to get ad lifecycle notifications.
         interstitialAd.setOnInterstitialAdDownload(new OnInterstitialAdDownload() {
