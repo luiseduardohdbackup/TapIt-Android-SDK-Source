@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project name="TapItSDK_custom_rules" default="help">
+
+    <property name="dist.dir" value="../../dist" />
+    <property name="out.library.jar.file" value="${dist.dir}/TapItAdView.jar"/>
+    <property name="java.compilerargs" value="-Xlint" />
+    <property name="doc.tapit.dir" value="${out.dir}\Documentation"/>
+
+    <target name="build-javadocs">
+        <javadoc destdir="${doc.tapit.dir}">
+            <classpath>
+                <pathelement path="${android.jar}"/>
+            </classpath>
+            <fileset dir="src" defaultexcludes="yes">
+                <include name="com/tapit/adview/AdLog"/>
+                <include name="com/tapit/adview/AdView.java"/>
+                <include name="com/tapit/adview/AdViewCore.java"/>
+                <include name="com/tapit/adview/AdInterstitialView.java"/>
+                <include name="com/tapit/adview/track/EventTracker.java"/>
+                <include name="com/tapit/adview/track/InstallTracker.java"/>
+            </fileset>
+        </javadoc>
+        <zip destfile="${dist.dir}/javadoc.zip"
+            basedir="${doc.tapit.dir}"
+            />
+        <delete dir="${doc.tapit.dir}"/>
+
+    </target>
+
+    <target name="build-distributable">
+        <zip destfile="${dist.dir}/TapItSDK-android.zip">
+            <zipfileset dir="${dist.dir}" includes="TapItAdView.jar" prefix="TapItSDK"/>
+            <zipfileset dir="${dist.dir}" includes="javadoc.zip" prefix="TapItSDK"/>
+            <zipfileset dir="../.." includes="LICENSE" prefix="TapItSDK"/>
+            <zipfileset dir="../.." includes="README.txt" prefix="TapItSDK"/>
+        </zip>
+
+    </target>
+
+    <target name="-post-package" depends="build-javadocs,build-distributable">
+        <delete file="${out.library.jar.file}" />
+        <delete file="${dist.dir}/javadoc.zip" />
+    </target>
+
+</project>
