@@ -53,7 +53,7 @@ import android.widget.Toast;
  * Viewer of advertising.
  */
 public abstract class AdViewCore extends WebView {
-    public static final String VERSION = "1.7.8";
+    public static final String VERSION = "1.7.9";
     public static final String TAG = "AdViewCore";
 
     private static final long AD_DEFAULT_RELOAD_PERIOD = 120000; // milliseconds
@@ -612,7 +612,9 @@ public abstract class AdViewCore extends WebView {
                 String data = null;
                 String videourl = null;
                 String clickurl = null;
-                view.setAdSize(AdView.BannerAdSize.AUTOSIZE_AD);
+                // calc request size based on size of layout allotted
+                view.calcDimensionsForRequest(context);
+
                 final String url = adRequest.createURL();
                 requestUrl = url;
                 try {

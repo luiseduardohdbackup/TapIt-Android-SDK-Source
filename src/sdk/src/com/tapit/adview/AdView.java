@@ -128,28 +128,22 @@ public class AdView extends AdViewCore {
 
     }
 
+    public BannerAdSize getAdSize() {
+        return adSize;
+    }
+
     public void setAdSize(BannerAdSize adSize) {
+        this.adSize = adSize;
+    }
+
+    protected void calcDimensionsForRequest(Context ctx) {
         int width = adSize.width;
         int height = adSize.height;
 
         if(width <= 0) {
-            Display display = ((Activity) context).getWindowManager().getDefaultDisplay();
+            Display display = ((Activity) ctx).getWindowManager().getDefaultDisplay();
             int screenHeight = display.getHeight();
             int screenWidth = display.getWidth();
-
-            String orientation;
-            int orient = ((Activity) context).getResources().getConfiguration().orientation;
-            if (orient == Configuration.ORIENTATION_LANDSCAPE) {
-                orientation = "l";
-            } else if (orient == Configuration.ORIENTATION_UNDEFINED) {
-                orientation = "x";
-            }
-            else {
-                orientation = "p";
-            }
-
-            Map<String, String> params = adRequest.getCustomParameters();
-            params.put("o", orientation);
 
             int adWidth = (int)(getWidth() / mDensity);
             if(adWidth <= 0) {
@@ -179,6 +173,20 @@ public class AdView extends AdViewCore {
         if ((adRequest != null)) {
             adRequest.setHeight(height);
             adRequest.setWidth(width);
+
+            String orientation;
+            int orient = ctx.getResources().getConfiguration().orientation;
+            if (orient == Configuration.ORIENTATION_LANDSCAPE) {
+                orientation = "l";
+            } else if (orient == Configuration.ORIENTATION_UNDEFINED) {
+                orientation = "x";
+            }
+            else {
+                orientation = "p";
+            }
+
+            Map<String, String> params = adRequest.getCustomParameters();
+            params.put("o", orientation);
         }
     }
 
