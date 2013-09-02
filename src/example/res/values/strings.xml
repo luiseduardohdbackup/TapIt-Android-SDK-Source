@@ -1,9 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <string name="tapitButtons">TapIt Buttons</string>
-    <string name="googleButtons">Google AdMob Mediation</string>
+    <string name="tapit_buttons">TapIt Buttons</string>
+    <string name="google_buttons">Google AdMob Mediation</string>
     <string name="app_name">TapItTest</string>
     <string name="tapit_banner_zone_id">7979</string>
+    <string name="video_ad_showcase">Video Ad Showcase</string>
+    <string name="video_ad_zone_id">2229</string>
 
+    <string name="play">Play</string>
+    <string name="pause">Pause</string>
+    <string name="request_ad">Request</string>
+    <string name="reset_ad">Reset</string>
+    <string name="click">Click</string>
+
+    <string name="fullscreen_ad">Full-screen Ad. </string>
+    <string name="inapp_browser">In-app Browser</string>
+    <string name="head_value">00:00</string>
+    <string name="duration">10:00</string>
+    
 </resources>

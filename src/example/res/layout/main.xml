@@ -13,7 +13,12 @@
             android:id="@+id/tapitText"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
-            android:text="@string/tapitButtons" />
+            android:text="@string/tapit_buttons" />
+        <Button
+            android:id="@+id/loadVideoAdButton"
+            android:text="@string/video_ad_showcase"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content" />
         <Button
             android:id="@+id/loadInterstitialButton"
             android:text="Load Interstitial"
