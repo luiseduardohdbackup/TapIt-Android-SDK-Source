@@ -46,7 +46,7 @@ public class TapItTestActivity extends Activity {
         setupButtons();
 
         TextView txt = (TextView)findViewById(R.id.tapitText);
-        txt.setText(Utils.getDeviceId(this));
+        txt.setText("Device Id: " + Utils.getDeviceId(this));
     }
 
     private void setupBannerAd(){
@@ -290,6 +290,15 @@ public class TapItTestActivity extends Activity {
             }
         });
 
+        findViewById(R.id.loadVideoAdButton).setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+        		Intent intent = new Intent(TapItTestActivity.this, VideoAdActivity.class);
+        		startActivity(intent);
+            }
+        });
+
+        
 //        // Uncomment to enable AdMob mediation example,
 //        // as well as the AdMobActivity activity block in AndroidManifest.xml
 //        // Download the AdMob SDK from https://developers.google.com/mobile-ads-sdk/download
