@@ -6,6 +6,9 @@ import java.io.InputStream;
 import java.util.Hashtable;
 import java.util.Map;
 
+import android.view.View;
+import com.tapit.advertising.internal.*;
+import com.tapit.advertising.internal.TapItAdActivity;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -17,8 +20,6 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
-import android.net.Uri;
 import android.os.AsyncTask;
 import android.util.Log;
 
@@ -41,8 +42,12 @@ public class AdPrompt {
 
 
     public AdPrompt(Context context, String zone) {
+        this(context, new AdRequest(zone));
+    }
+
+    public AdPrompt(Context context, AdRequest request) {
         this.context = context;
-        adRequest = new AdRequest(zone);
+        adRequest = request;
         adRequest.setAdtype(AD_TYPE_DIALOG);
         adRequest.initDefaultParameters(context);
         loaded = false;
@@ -84,6 +89,7 @@ public class AdPrompt {
      *
      * @param customParameters
      */
+    @Deprecated
     public void setCustomParameters(Hashtable<String, String> customParameters) {
         if (adRequest != null) {
             adRequest.setCustomParameters(customParameters);
@@ -141,9 +147,8 @@ public class AdPrompt {
                         // Spawn off thread to avoid ANR's on really slow devices...
                         Runnable r = new Runnable() {
                             @Override
-                            public void run(){
-                                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(clickUrl));
-                                theActivity.startActivityForResult(intent, 2);
+                            public void run() {
+                                TapItAdActivity.startActivity(context, buildWrapper());
                                 if (theListener != null){
                                     theListener.adPromptClosed(theAdPrompt, true);
                                 }
@@ -170,8 +175,29 @@ public class AdPrompt {
             if(listener != null) {
                 listener.adPromptError(this, e.getMessage());
             }
-            Log.e("TapIt", "An error occured while attempting to display AdPrompt", e);
+            Log.e("TapIt", "An error occurred while attempting to display AdPrompt", e);
         }
+    }
+
+    private AdActivityContentWrapper buildWrapper() {
+        AdActivityContentWrapper wrapper = new AdActivityContentWrapper() {
+            private BasicWebView webView = null;
+
+            @Override
+            public View getContentView(TapItAdActivity activity) {
+                if (webView == null) {
+                    webView = new BasicWebView(activity);
+                    webView.loadUrl(clickUrl);
+                }
+
+                return webView;
+            }
+
+            @Override
+            public void done() {
+            }
+        };
+        return wrapper;
     }
 
     private String requestGet(String url) throws IOException {

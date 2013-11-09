@@ -15,7 +15,7 @@ import com.tapit.adview.AdLog;
 import com.tapit.adview.Utils;
 
 /**
- * Application Event Tracker. Sends a notification to TapIt servers with UDID,
+ * Application Event Tracker. Sends a notification to PW servers with UDID,
  * UA, and Package Name
  */
 public class EventTracker {
@@ -43,7 +43,7 @@ public class EventTracker {
 	}
 
 	/**
-	 * Send Event Notification To TapIt
+	 * Send Event Notification To Phunware
 	 * 
 	 * @param context
 	 *            - The reference to the context of Activity
@@ -134,7 +134,7 @@ public class EventTracker {
 	 * {@link com.tapit.adview.AdLog#LOG_LEVEL_NONE}<br>
 	 * {@link com.tapit.adview.AdLog#LOG_LEVEL_1}<br>
 	 * {@link com.tapit.adview.AdLog#LOG_LEVEL_2}<br>
-	 * {@link com.tapit.adview.AdLog#LOG_LEVEL_3}<br> 
+	 * {@link com.tapit.adview.AdLog#LOG_LEVEL_3}<br>
 	 *
 	 * @param logLevel
 	 */

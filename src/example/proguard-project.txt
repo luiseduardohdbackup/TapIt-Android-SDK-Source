@@ -18,11 +18,3 @@
 #-keepclassmembers class fqcn.of.javascript.interface.for.webview {
 #   public *;
 #}
-
--keep public class com.tapit.**
-
-# enable this if you use admob mediation
-#-keep public class com.google.ads.**
-
-# disable this if you are using admob mediation
--dontwarn com.tapit.mediation.admob.**

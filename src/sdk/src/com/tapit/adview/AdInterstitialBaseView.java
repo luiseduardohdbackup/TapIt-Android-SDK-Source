@@ -2,18 +2,15 @@ package com.tapit.adview;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
-import android.net.Uri;
 import android.util.Log;
 import android.view.Display;
-import android.view.KeyEvent;
 import android.view.View;
 import android.widget.RelativeLayout;
 
-import com.tapit.adview.AdViewCore.OnAdDownload;
-import com.tapit.adview.AdViewCore.OnAdClickListener;
+import com.tapit.advertising.internal.*;
+import com.tapit.advertising.internal.TapItAdActivity;
 
-public abstract class AdInterstitialBaseView extends AdView implements OnAdDownload, OnAdClickListener {
+public abstract class AdInterstitialBaseView extends AdView implements AdViewCore.OnAdDownload {
 
     public enum FullscreenAdSize {
         AUTOSIZE_AD     ( -1,  -1),
@@ -29,7 +26,7 @@ public abstract class AdInterstitialBaseView extends AdView implements OnAdDownl
         
         
     protected final Context context;
-    protected Context callingActivityContext;
+//    protected Context callingActivityContext;
     protected RelativeLayout interstitialLayout;
     protected boolean isLoaded = false;
     protected OnInterstitialAdDownload interstitialListener;
@@ -40,8 +37,8 @@ public abstract class AdInterstitialBaseView extends AdView implements OnAdDownl
         context = ctx;
         setAdSize(FullscreenAdSize.AUTOSIZE_AD); // default to auto-sizing banner
         setOnAdDownload(this);
-        setOnAdClickListener(this);
-        setUpdateTime(0); // disable add cycling
+//        setOnAdClickListener(this);
+        super.setUpdateTime(0); // disable add cycling
     }
 
     public void setAdSize(FullscreenAdSize adSize) {
@@ -85,24 +82,24 @@ public abstract class AdInterstitialBaseView extends AdView implements OnAdDownl
         }
     }
 
-    public void closeInterstitial() {
-        final AdInterstitialBaseView adView = this;
-        handler.post(new Runnable() {
-            @Override
-            public void run() {
-                if(callingActivityContext == null) {
-                    // interstitial was never displayed; nothing to do here...
-                    return;
-                }
-                ((Activity)callingActivityContext).finish();
-                if(interstitialListener != null) {
-                    interstitialListener.didClose(adView);
-                }
-                                
-                removeViews();
-            }
-        });
-    }
+//    public void closeInterstitial() {
+//        final AdInterstitialBaseView adView = this;
+//        handler.post(new Runnable() {
+//            @Override
+//            public void run() {
+//                if(callingActivityContext == null) {
+//                    // interstitial was never displayed; nothing to do here...
+//                    return;
+//                }
+//                ((Activity)callingActivityContext).finish();
+//                if(interstitialListener != null) {
+//                    interstitialListener.didClose(adView);
+//                }
+//
+//                removeViews();
+//            }
+//        });
+//    }
 
     public boolean isLoaded() {
         return isLoaded;
@@ -116,9 +113,25 @@ public abstract class AdInterstitialBaseView extends AdView implements OnAdDownl
         if(interstitialListener != null) {
             interstitialListener.willOpen(this);
         }
-        AdActivity.adView = this;
-        Intent i = new Intent(context, AdActivity.class);
-        ((Activity)context).startActivityForResult(i,1);
+
+        AdActivityContentWrapper wrapper = new AdActivityContentWrapper() {
+
+            @Override
+            public View getContentView(TapItAdActivity activity) {
+                return AdInterstitialBaseView.this;
+            }
+
+            @Override
+            public void done() {
+                //To change body of implemented methods use File | Settings | File Templates.
+                willDismissFullScreen();
+                if(interstitialListener != null) {
+                    interstitialListener.didClose(AdInterstitialBaseView.this);
+                }
+            }
+        };
+
+        TapItAdActivity.startActivity(context, wrapper);
     }
 
     /**
@@ -171,20 +184,20 @@ public abstract class AdInterstitialBaseView extends AdView implements OnAdDownl
         }
     }
 
-    @Override
-    public void click(String url) {
-        if (!url.toLowerCase().startsWith("http://") && !url.toLowerCase().startsWith("https://")){
-            if(interstitialListener != null) {
-                interstitialListener.willLeaveApplication(this);
-            }
-            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-            Activity thisActivity = ((Activity)callingActivityContext);
-            thisActivity.startActivityForResult(intent,2);
-        }
-        else {
-            loadUrl(url);
-        }
-    }
+//    @Override
+//    public void click(String url) {
+//        if (!url.toLowerCase().startsWith("http://") && !url.toLowerCase().startsWith("https://")){
+//            if(interstitialListener != null) {
+//                interstitialListener.willLeaveApplication(this);
+//            }
+//            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+//            Activity thisActivity = ((Activity)callingActivityContext);
+//            thisActivity.startActivityForResult(intent,2);
+//        }
+//        else {
+//            loadUrl(url);
+//        }
+//    }
 
     @Override
     public void willPresentFullScreen(AdViewCore adView) {
@@ -231,15 +244,16 @@ public abstract class AdInterstitialBaseView extends AdView implements OnAdDownl
         // no-op
     }
 
-    @Override
-    public boolean onKeyDown(int keyCode, KeyEvent event)  {
-        // Close interstitial properly on back button press
-        if (keyCode == KeyEvent.KEYCODE_BACK && event.getRepeatCount() == 0) {
-            closeInterstitial();
-            return true;
-        }
-        return super.onKeyDown(keyCode, event);
-    }
+//    @Override
+//    public boolean onKeyDown(int keyCode, KeyEvent event)  {
+//        Log.d("TapIt", "AdInterstitialBaseView.onKeyDown");
+//        // Close interstitial properly on back button press
+//        if (keyCode == KeyEvent.KEYCODE_BACK && event.getRepeatCount() == 0) {
+//            closeInterstitial();
+//            return true;
+//        }
+//        return super.onKeyDown(keyCode, event);
+//    }
 
     /**
      * Allows lookup of resource id's from jars at runtime
@@ -268,15 +282,15 @@ public abstract class AdInterstitialBaseView extends AdView implements OnAdDownl
            if(desiredClass != null)
                id = desiredClass.getField(name).getInt(desiredClass);
        } catch (ClassNotFoundException e) {
-           Log.e("TapIt", "An error occured", e);
+           Log.e("TapIt", "An error occurred", e);
        } catch (IllegalArgumentException e) {
-           Log.e("TapIt", "An error occured", e);
+           Log.e("TapIt", "An error occurred", e);
        } catch (SecurityException e) {
-           Log.e("TapIt", "An error occured", e);
+           Log.e("TapIt", "An error occurred", e);
        } catch (IllegalAccessException e) {
-           Log.e("TapIt", "An error occured", e);
+           Log.e("TapIt", "An error occurred", e);
        } catch (NoSuchFieldException e) {
-           Log.e("TapIt", "An error occured", e);
+           Log.e("TapIt", "An error occurred", e);
        }
 
        return id;

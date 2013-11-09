@@ -8,6 +8,15 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
+import android.os.*;
+import android.telephony.TelephonyManager;
+import android.view.*;
+import com.tapit.advertising.internal.BasicWebView;
+import com.tapit.advertising.internal.TapItAdActivity;
+import com.tapit.advertising.internal.AdActivityContentWrapper;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -27,15 +36,9 @@ import android.graphics.Color;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
-import android.os.AsyncTask;
-import android.os.Handler;
-import android.os.Looper;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.util.Log;
-import android.view.View;
-import android.view.ViewGroup;
-import android.view.WindowManager;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.Animation;
 import android.view.animation.Animation.AnimationListener;
@@ -46,18 +49,20 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
-import android.widget.Toast;
 
 
 /**
  * Viewer of advertising.
  */
 public abstract class AdViewCore extends WebView {
-    public static final String VERSION = "1.7.9";
+    public static final String VERSION = "1.8.0";
     public static final String TAG = "AdViewCore";
 
     private static final long AD_DEFAULT_RELOAD_PERIOD = 120000; // milliseconds
-//    private static final long AD_STOP_CHECK_PERIOD = 10000; // milliseconds
+    protected AutoDetectParametersThread autoDetectParametersThread;
+    protected LocationManager locationManager;
+    protected WhereamiLocationListener listener;
+    //    private static final long AD_STOP_CHECK_PERIOD = 10000; // milliseconds
     Handler handler = new Handler(Looper.getMainLooper());
     protected Context context;
     private Integer defaultImageResource;
@@ -113,7 +118,8 @@ public abstract class AdViewCore extends WebView {
 
     protected static final int BACKGROUND_ID = 101;
     protected static final int PLACEHOLDER_ID = 100;
-        
+    private String userAgent = null;
+
     private enum ViewState {
         DEFAULT, RESIZED, EXPANDED, HIDDEN
     }
@@ -399,31 +405,44 @@ public abstract class AdViewCore extends WebView {
     }
 
     private void initialize(Context context, AttributeSet attrs) {
+        String zone = null;
+        String keywords = null;
+        String latitude = null;
+        String longitude = null;
+        String ua = null;
+        String paramBG = null;
+        String paramLINK = null;
+        Integer defaultImage = null;
+        Long p = null;
+        Integer minSizeX = null;
+        Integer minSizeY = null;
+        Integer sizeX = null;
+        Integer sizeY = null;
+
         if (attrs != null) {
-            String zone = Utils.getStringResource(context, attrs.getAttributeValue(null, "zone"));
-            String keywords = Utils.getStringResource(context, attrs.getAttributeValue(null, "keywords"));
-            String latitude = Utils.getStringResource(context, attrs.getAttributeValue(null, "latitude"));
-            String longitude = Utils.getStringResource(context, attrs.getAttributeValue(null, "longitude"));
-            String ua = Utils.getStringResource(context, attrs.getAttributeValue(null, "ua"));
-            String paramBG = Utils.getStringResource(context, attrs.getAttributeValue(null, "paramBG"));
-            String paramLINK = Utils.getStringResource(context, attrs.getAttributeValue(null, "paramLINK"));
-            Integer defaultImage = attrs.getAttributeResourceValue(null, "defaultImage", -1);
-            Long p = getLongParameter(attrs.getAttributeValue(null, "adReloadPeriod"));
+            zone = Utils.getStringResource(context, attrs.getAttributeValue(null, "zone"));
+            keywords = Utils.getStringResource(context, attrs.getAttributeValue(null, "keywords"));
+            latitude = Utils.getStringResource(context, attrs.getAttributeValue(null, "latitude"));
+            longitude = Utils.getStringResource(context, attrs.getAttributeValue(null, "longitude"));
+            ua = Utils.getStringResource(context, attrs.getAttributeValue(null, "ua"));
+            paramBG = Utils.getStringResource(context, attrs.getAttributeValue(null, "paramBG"));
+            paramLINK = Utils.getStringResource(context, attrs.getAttributeValue(null, "paramLINK"));
+            defaultImage = attrs.getAttributeResourceValue(null, "defaultImage", -1);
+            p = getLongParameter(attrs.getAttributeValue(null, "adReloadPeriod"));
             if (p != null)
                 this.adReloadPeriod = p; 
-            Integer minSizeX = getIntParameter(attrs.getAttributeValue(null, "minSizeX"));
-            Integer minSizeY = getIntParameter(attrs.getAttributeValue(null, "minSizeY"));
-            Integer sizeX = getIntParameter(attrs.getAttributeValue(null, "sizeX"));
-            Integer sizeY = getIntParameter(attrs.getAttributeValue(null, "sizeY"));
+            minSizeX = getIntParameter(attrs.getAttributeValue(null, "minSizeX"));
+            minSizeY = getIntParameter(attrs.getAttributeValue(null, "minSizeY"));
+            sizeX = getIntParameter(attrs.getAttributeValue(null, "sizeX"));
+            sizeY = getIntParameter(attrs.getAttributeValue(null, "sizeY"));
 //            String background = attrs.getAttributeValue("android", "background");
-                        
-            loadContent(context,
-                    minSizeX, minSizeY, sizeX, sizeY,
-                    defaultImage,
-                    zone, keywords, latitude,
-                    longitude, ua, paramBG, paramLINK,
-                    null);
         }
+        loadContent(context,
+                minSizeX, minSizeY, sizeX, sizeY,
+                defaultImage,
+                zone, keywords, latitude,
+                longitude, ua, paramBG, paramLINK,
+                null);
     }
 
     private void loadContent(Context context,
@@ -435,6 +454,10 @@ public abstract class AdViewCore extends WebView {
             String paramBG, String paramLINK,
             Map<String, String> customParameters) {
         this.context = context;
+        autoDetectParametersThread = new AutoDetectParametersThread(context, this);
+
+        setupWebView();
+
         adRequest = new AdRequest(adLog);
         adRequest.initDefaultParameters(context);
         adRequest
@@ -451,14 +474,17 @@ public abstract class AdViewCore extends WebView {
                 .setCustomParameters(customParameters);
 
         defaultImageResource = defaultImage;
+    }
 
+    private void setupWebView() {
         WebSettings webSettings = getSettings();
         webSettings.setSavePassword(false);
         webSettings.setSaveFormData(false);
         webSettings.setJavaScriptEnabled(true);
         webSettings.setSupportZoom(false);
         webSettings.setCacheMode(WebSettings.LOAD_NO_CACHE);
-                
+        userAgent = webSettings.getUserAgentString();
+
         setScrollContainer(false);
         setVerticalScrollBarEnabled(false);
         setHorizontalScrollBarEnabled(false);
@@ -469,7 +495,7 @@ public abstract class AdViewCore extends WebView {
 
         wm.getDefaultDisplay().getMetrics(metrics);
         mDensity = metrics.density;
-                
+
         setScriptPath();
 
         setWebViewClient(new AdWebViewClient(context));
@@ -541,6 +567,7 @@ public abstract class AdViewCore extends WebView {
                         e.getMessage());
             }
         }
+        isFirstTime = false;
         setUpdateTime(0);
     }
 
@@ -614,6 +641,10 @@ public abstract class AdViewCore extends WebView {
                 String clickurl = null;
                 // calc request size based on size of layout allotted
                 view.calcDimensionsForRequest(context);
+
+                //TODO clean up this mess!
+                autoDetectParametersThread.run();
+                autoDetectParametersThread.applyParameters(adRequest);
 
                 final String url = adRequest.createURL();
                 requestUrl = url;
@@ -892,37 +923,20 @@ public abstract class AdViewCore extends WebView {
                     adLog.log(AdLog.LOG_LEVEL_2, AdLog.LOG_TYPE_INFO, "OverrideUrlLoading - click", url);
                     adClickListener.click(url);
                 } else {
-                    int isAccessNetworkState = context
-                            .checkCallingOrSelfPermission(Manifest.permission.ACCESS_NETWORK_STATE);
-
                     if(adDownload != null) {
                         adDownload.clicked((AdViewCore)view);
                     }
-                    if (isAccessNetworkState == PackageManager.PERMISSION_GRANTED) {
-                        if (isInternetAvailable(context)) {
-                            adLog.log(AdLog.LOG_LEVEL_2, AdLog.LOG_TYPE_INFO, "OverrideUrlLoading - openUrlInExternalBrowser", url);
-                            if(adDownload != null) {
-                                adDownload.willPresentFullScreen((AdViewCore)view);
-                            }
-                            openUrlInExternalBrowser(context, url);
-                            if(adDownload != null) {
-                                adDownload.didPresentFullScreen((AdViewCore)view);
-                            }
-                                                        
-                        } else {
-                            Toast.makeText(context, "Internet is not available", Toast.LENGTH_LONG)
-                                    .show();
-                        }
-                    } else if (isAccessNetworkState == PackageManager.PERMISSION_DENIED) {
-                        adLog.log(AdLog.LOG_LEVEL_2, AdLog.LOG_TYPE_INFO, "OverrideUrlLoading - openUrlInExternalBrowser", url);
-                        if(adDownload != null) {
-                            adDownload.willPresentFullScreen((AdViewCore)view);
-                            adDownload.willLeaveApplication((AdViewCore)view);
-                        }
-                        openUrlInExternalBrowser(context, url);
+
+                    if(adDownload != null) {
+                        adDownload.willPresentFullScreen((AdViewCore)view);
+                    }
+                    openUrlInExternalBrowser(context, url);
+                    if(adDownload != null) {
+                        adDownload.didPresentFullScreen((AdViewCore)view);
                     }
                 }
             } catch (Exception e) {
+                Log.d("TapIt", "An error occurred", e);
                 adLog.log(AdLog.LOG_LEVEL_1, AdLog.LOG_TYPE_ERROR, "shouldOverrideUrlLoading",
                         e.getMessage());
             }
@@ -970,15 +984,12 @@ public abstract class AdViewCore extends WebView {
         }
     };
 
-    private void openUrlInExternalBrowser(Context context, String url) {
+    private void openUrlInExternalBrowser(final Context context, String url) {
                 
         if (openInInternalBrowser){
             try {
-                AdActivity.callingAdView = this;
-                Intent intent = new Intent(context, AdActivity.class);
-                intent.setData(Uri.parse(url));
-                intent.putExtra("com.tapit.adview.ClickURL", url);
-                context.startActivity(intent);
+                callPwAdActivity(url);
+
             } catch (ActivityNotFoundException e) {
                 adLog.log(AdLog.LOG_LEVEL_1, AdLog.LOG_TYPE_ERROR, "openUrlInExternalBrowser",
                         e.getMessage() + " - Page will open in system browser.");
@@ -1009,9 +1020,52 @@ public abstract class AdViewCore extends WebView {
             }
         }
     }
-        
+
+    private void callPwAdActivity(final String url) {
+        AdActivityContentWrapper wrapper = new AdActivityContentWrapper() {
+            private BasicWebView mWebView = null;
+
+            @Override
+            public View getContentView(final TapItAdActivity activity) {
+                if (mWebView == null) {
+                    mWebView = setupWebView(activity);
+                }
+
+                mWebView.loadUrl(url);
+                return mWebView;
+            }
+
+            @Override
+            public void done() {
+                // noop
+            }
+
+            @Override
+            public void stopContent() {
+                willDismissFullScreen();
+            }
+        };
+
+        TapItAdActivity.startActivity(context, wrapper);
+    }
+
+    BasicWebView setupWebView(final TapItAdActivity activity) {
+        BasicWebView webView = new BasicWebView(activity);
+        webView.setListener(new BasicWebView.BasicWebViewListener() {
+            @Override
+            public void willLeaveApplication(BasicWebView view) {
+                AdViewCore.OnAdDownload listener = getOnAdDownload();
+                if(listener != null) {
+                    listener.willLeaveApplication(AdViewCore.this);
+                }
+            }
+        });
+
+        return webView;
+    }
+
     /**
-     * Hackish inter-activity communication... should only be called by AdActivity...
+     * Hackish inter-activity communication... should only be called by TapItAdActivity...
      */
     void willDismissFullScreen() {
         if(adDownload != null) {
@@ -1257,16 +1311,16 @@ public abstract class AdViewCore extends WebView {
         if (mDataToInject != null){
             injectJavaScript(mDataToInject);
         }
-                
+
 //        injectJavaScript("Ormma.ready();");
-                
-                
+
+
 //        mDefaultHeight = (int) (getHeight() / mDensity);
 //        mDefaultWidth = (int) (getWidth() / mDensity);
 
 //        setVisibility(View.VISIBLE);
         if (animateBack){
-                        
+
             final float centerX = getWidth() / 2.0f;
             final float centerY = getHeight() / 2.0f;
 
@@ -1279,7 +1333,7 @@ public abstract class AdViewCore extends WebView {
             rotation.setInterpolator(new DecelerateInterpolator());
 
             handler.post(new Runnable() {
-                                
+
                 @Override
                 public void run() {
                     startAnimation(rotation);
@@ -1287,10 +1341,10 @@ public abstract class AdViewCore extends WebView {
                 }
             });
         } else {
-                        
+
         }
     }
-        
+
     /**
      * Sets the script path.
      */
@@ -1686,5 +1740,221 @@ public abstract class AdViewCore extends WebView {
     // Stub to quell errors relating to stripping out ORMMA
     protected class Properties {
                 
+    }
+
+    protected void initAutoDetectParametersThread() {
+        if ((autoDetectParametersThread != null)
+                && (autoDetectParametersThread.getState().equals(Thread.State.NEW))) {
+            autoDetectParametersThread.start();
+        }
+    }
+
+    protected void interruptAutoDetectParametersThread() {
+        if (autoDetectParametersThread != null) {
+            try {
+                autoDetectParametersThread.interrupt();
+            } catch (Exception e) {
+            }
+        }
+    }
+
+    private class AutoDetectParametersThread extends Thread {
+        private Context context;
+        private AdViewCore adserverView;
+
+        public AutoDetectParametersThread(Context context,
+                AdViewCore adserverView) {
+            this.context = context;
+            this.adserverView = adserverView;
+        }
+
+        public void applyParameters(AdRequest request) {
+            if (request == null) {
+                throw new NullPointerException("AdRequest cannot be null");
+            }
+
+            //TODO Test if AutoDetectParametersThread has completed it's work yet...
+
+            AutoDetectedParametersSet autoDetectedParametersSet = AutoDetectedParametersSet.getInstance();
+
+            if(request.getUa() == null) {
+                request.setUa(autoDetectedParametersSet.getUa());
+            }
+
+            if (request.getLatitude() == null || request.getLongitude() == null) {
+                request.setLatitude(autoDetectedParametersSet.getLatitude());
+                request.setLongitude(autoDetectedParametersSet.getLongitude());
+            }
+
+        }
+
+        @Override
+        public void run() {
+//            if (adRequest != null) {
+                AutoDetectedParametersSet autoDetectedParametersSet = AutoDetectedParametersSet
+                        .getInstance();
+
+//                if (adRequest.getUa() == null) {
+                    if (autoDetectedParametersSet.getUa() == null) {
+                        if ((userAgent != null) && (userAgent.length() > 0)) {
+//                            adRequest.setUa(userAgent);
+                            autoDetectedParametersSet.setUa(userAgent);
+                        }
+                    }
+//                    else {
+//                        adRequest.setUa(autoDetectedParametersSet.getUa());
+//                    }
+//                }
+
+//                if ((adRequest.getLatitude() == null) || (adRequest.getLongitude() == null)) {
+                    if ((autoDetectedParametersSet.getLatitude() == null)
+                            || (autoDetectedParametersSet.getLongitude() == null)) {
+                        int isAccessFineLocation = context
+                                .checkCallingOrSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION);
+
+                        boolean checkNetworkProdier = false;
+                        locationManager = (LocationManager) context
+                                .getSystemService(Context.LOCATION_SERVICE);
+                        if (isAccessFineLocation == PackageManager.PERMISSION_GRANTED) {
+                            boolean isGpsEnabled = locationManager
+                                    .isProviderEnabled(LocationManager.GPS_PROVIDER);
+
+                            if (isGpsEnabled) {
+                                listener = new AdView.WhereamiLocationListener(locationManager,
+                                        autoDetectedParametersSet);
+                                locationManager.requestLocationUpdates(
+                                        LocationManager.GPS_PROVIDER, 0, 0, listener,
+                                        Looper.getMainLooper());
+                            } else {
+                                checkNetworkProdier = true;
+                                adLog.log(AdLog.LOG_LEVEL_2, AdLog.LOG_TYPE_WARNING,
+                                        "AutoDetectedParametersSet.Gps", "not avalable");
+                            }
+                        } else {
+                            checkNetworkProdier = true;
+                            adLog.log(AdLog.LOG_LEVEL_2, AdLog.LOG_TYPE_WARNING,
+                                    "AutoDetectedParametersSet.Gps",
+                                    "no permission ACCESS_FINE_LOCATION");
+                        }
+
+                        if (checkNetworkProdier) {
+                            int isAccessCoarseLocation = context
+                                    .checkCallingOrSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION);
+
+                            if (isAccessCoarseLocation == PackageManager.PERMISSION_GRANTED) {
+                                boolean isNetworkEnabled = locationManager
+                                        .isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+
+                                if (isNetworkEnabled) {
+                                    listener = new AdView.WhereamiLocationListener(locationManager,
+                                            autoDetectedParametersSet);
+                                    locationManager.requestLocationUpdates(
+                                            LocationManager.NETWORK_PROVIDER, 0, 0, listener,
+                                            Looper.getMainLooper());
+                                } else {
+                                    adLog.log(AdLog.LOG_LEVEL_2, AdLog.LOG_TYPE_WARNING,
+                                            "AutoDetectedParametersSet.Network", "not avalable");
+                                }
+                            } else {
+                                adLog.log(AdLog.LOG_LEVEL_2, AdLog.LOG_TYPE_WARNING,
+                                        "AutoDetectedParametersSet.Network",
+                                        "no permission ACCESS_COARSE_LOCATION");
+                            }
+                        }
+                    }
+//                    else {
+//                        adRequest.setLatitude(autoDetectedParametersSet.getLatitude());
+//                        adRequest.setLongitude(autoDetectedParametersSet.getLongitude());
+//                        adLog.log(AdLog.LOG_LEVEL_2, AdLog.LOG_TYPE_WARNING,
+//                                "AutoDetectedParametersSet.Gps/Network=", "("
+//                                        + autoDetectedParametersSet.getLatitude() + ";"
+//                                        + autoDetectedParametersSet.getLongitude() + ")");
+//                    }
+//                }
+
+//                if (adRequest.getConnectionSpeed() == null) {
+                    if (autoDetectedParametersSet.getConnectionSpeed() == null) {
+                        try {
+                            Integer connectionSpeed = null;
+                            ConnectivityManager connectivityManager = (ConnectivityManager) context
+                                    .getSystemService(Context.CONNECTIVITY_SERVICE);
+                            NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
+
+                            if (networkInfo != null) {
+                                int type = networkInfo.getType();
+                                int subtype = networkInfo.getSubtype();
+
+                                // 0 - low (gprs, edge), 1 - fast (3g, wifi)
+                                if (type == ConnectivityManager.TYPE_WIFI) {
+                                    connectionSpeed = 1;
+                                } else if (type == ConnectivityManager.TYPE_MOBILE) {
+                                    if (subtype == TelephonyManager.NETWORK_TYPE_EDGE) {
+                                        connectionSpeed = 0;
+                                    } else if (subtype == TelephonyManager.NETWORK_TYPE_GPRS) {
+                                        connectionSpeed = 0;
+                                    } else if (subtype == TelephonyManager.NETWORK_TYPE_UMTS) {
+                                        connectionSpeed = 1;
+                                    }
+                                }
+                            }
+
+                            if (connectionSpeed != null) {
+//                                adRequest.setConnectionSpeed(connectionSpeed);
+                                autoDetectedParametersSet.setConnectionSpeed(connectionSpeed);
+                            }
+                        } catch (Exception e) {
+                        }
+                    }
+//                    else {
+//                        adRequest
+//                                .setConnectionSpeed(autoDetectedParametersSet.getConnectionSpeed());
+//                    }
+//                }
+//            }
+        }
+    }
+
+    protected class WhereamiLocationListener implements LocationListener {
+        private LocationManager locationManager;
+        private AutoDetectedParametersSet autoDetectedParametersSet;
+
+        public WhereamiLocationListener(LocationManager locationManager,
+                AutoDetectedParametersSet autoDetectedParametersSet) {
+            this.locationManager = locationManager;
+            this.autoDetectedParametersSet = autoDetectedParametersSet;
+        }
+
+        public void onLocationChanged(Location location) {
+            locationManager.removeUpdates(this);
+
+            try {
+                double latitude = location.getLatitude();
+                double longitude = location.getLongitude();
+
+                adRequest.setLatitude(Double.toString(latitude));
+                adRequest.setLongitude(Double.toString(longitude));
+                autoDetectedParametersSet.setLatitude(Double.toString(latitude));
+                autoDetectedParametersSet.setLongitude(Double.toString(longitude));
+                adLog.log(AdLog.LOG_LEVEL_3, AdLog.LOG_TYPE_INFO, "LocationChanged=",
+                        "(" + autoDetectedParametersSet.getLatitude() + ";"
+                                + autoDetectedParametersSet.getLongitude() + ")");
+
+            } catch (Exception e) {
+                adLog.log(AdLog.LOG_LEVEL_2, AdLog.LOG_TYPE_ERROR, "LocationChanged",
+                        e.getMessage());
+            }
+        }
+
+        @Override
+        public void onProviderDisabled(String provider) {
+        }
+
+        @Override
+        public void onProviderEnabled(String provider) {
+        }
+
+        @Override
+        public void onStatusChanged(String provider, int status, Bundle extras) {
+        }
     }
 }

@@ -17,7 +17,7 @@ import com.tapit.adview.AdLog;
 import com.tapit.adview.Utils;
 
 /**
- * Conversion and Installation Tracker. Sends a notification to TapIt servers
+ * Conversion and Installation Tracker. Sends a notification to Phunware servers
  * with UDID, UA, and Package Name
  */
 public class InstallTracker {
@@ -45,7 +45,7 @@ public class InstallTracker {
 	}
 
 	/**
-	 * Send Install Notification To TapIt
+	 * Send Install Notification To Phunware
 	 * 
 	 * @param context
 	 *            - The reference to the context of Activity
@@ -55,7 +55,7 @@ public class InstallTracker {
 	}
 
 	/**
-	 * Send Install Notification To TapIt
+	 * Send Install Notification To Phunware
 	 * 
 	 * @param context
 	 *            - The reference to the context of Activity
@@ -72,7 +72,7 @@ public class InstallTracker {
 		mOfferId = offer;
 		mPackageName = mContext.getPackageName();
 
-		SharedPreferences settings = mContext.getSharedPreferences("tapitSettings", 0);
+		SharedPreferences settings = mContext.getSharedPreferences("phunwareSettings", 0);
 		if (settings.getBoolean(mPackageName + " installed", false) == false) {
 			ua = Utils.getUserAgentString(mContext);
 			new Thread(mTrackInstall).start();
@@ -137,7 +137,7 @@ public class InstallTracker {
 
 			// If we made it here, the request has been tracked
 			adLog.log(AdLog.LOG_LEVEL_3, AdLog.LOG_TYPE_INFO, "InstallTracker", "Install track successful");
-			SharedPreferences.Editor editor = mContext.getSharedPreferences("tapitSettings", 0)
+			SharedPreferences.Editor editor = mContext.getSharedPreferences("phunwareSettings", 0)
 					.edit();
 			editor.putBoolean(mPackageName + " installed", true).commit();
 		}
@@ -148,7 +148,7 @@ public class InstallTracker {
 	 * {@link com.tapit.adview.AdLog#LOG_LEVEL_NONE}<br>
 	 * {@link com.tapit.adview.AdLog#LOG_LEVEL_1}<br>
 	 * {@link com.tapit.adview.AdLog#LOG_LEVEL_2}<br>
-	 * {@link com.tapit.adview.AdLog#LOG_LEVEL_3}<br> 
+	 * {@link com.tapit.adview.AdLog#LOG_LEVEL_3}<br>
 	 *
 	 * @param logLevel
 	 */

@@ -1,24 +1,30 @@
 TapIt Android SDK
 =================
 
-Version 1.7.9
+Version 1.8.0
 
 This is the Android SDK for the TapIt! mobile ad network. Go to http://tapit.com/ for more details and to sign up.
 
-``/dist`` Library files to be included in your app<br/>
-``/src`` SDK and example project source
+###[Download TapIt SDK](https://github.com/tapit/TapIt-Android-SDK-Source/raw/master/dist/TapItSDK.zip)<br/>
+###[Example project source](https://github.com/tapit/TapIt-Android-SDK-Source/tree/master/src/example)
+
+
+Requrements:
+------------
+Android SDK 2.2+ (API level 8) or above
 
 
 Usage:
 ------
-To install, extract the SDK archive(https://github.com/tapit/TapIt-Android-SDK-Source/raw/master/dist/TapItSDK-android.zip) into your project's ```/lib``` folder, and add TapItAdView.jar into the project's build path:
+*We've streamlined our API as of v1.8.0, but still support previous integrations.
+ Check the [Old SDK Docs](https://github.com/tapit/TapIt-Android-SDK-Source/blob/master/README_LEGACY.md)
+for legacy API documentation.*
 
-![Add TapItAdView.jar to Build Path](https://raw.github.com/tapit/TapIt-Android-SDK-Source/master/doc/assets/add_jar.png)
+* To install, extract the [TapIt SDK Archive](https://github.com/tapit/TapIt-Android-SDK-Source/raw/master/dist/TapItSDK.zip) into your project's `/libs` folder, and add `TapItSDK.jar` into the project's build path:
 
-Set TapItAdView.jar to be exported as part of your apk file:
+* Set TapItAdView.jar to be exported as part of your apk file:
 
-![Export TapItAdView.jar](https://raw.github.com/tapit/TapIt-Android-SDK-Source/master/doc/assets/export_jar.png)
-
+* Update your `AndroidManifest.xml` to include the following permissions and activity:
 
 ````xml
 <uses-permission android:name="android.permission.INTERNET"></uses-permission>
@@ -36,259 +42,98 @@ Set TapItAdView.jar to be exported as part of your apk file:
     android:configChanges="keyboard|keyboardHidden|orientation" />
 
 ````
-Your manifest should look something like this:
-
-![Example manifest](https://raw.github.com/tapit/TapIt-Android-SDK-Source/master/doc/assets/manifest.png)
-
-See https://github.com/tapit/TapIt-Android-SDK-Source/blob/master/src/example/AndroidManifest.xml for an example manifest file.
+See [AndroidManifest.xml](https://github.com/tapit/TapIt-Android-SDK-Source/blob/master/src/example/AndroidManifest.xml) for an example manifest file.
 
 **NOTE:** Zones correspond to a specific ad type, which is specified through the TapIt dashboard.  Please ensure that you use the correct Zone ID for your ad units or you may experience un-expected results.
 
-A sample project is included in this repo.  See https://github.com/tapit/TapIt-Android-SDK-Source/tree/master/src/example for a live demo.
+A sample project is included in this repo.  See [Example Code](https://github.com/tapit/TapIt-Android-SDK-Source/tree/master/src/example) for a live demo.
 
 AdPrompt Usage
 --------------
 AdPrompts are a simple ad unit designed to have a native feel. The user is given the option to download an app, and if they accept, they are taken to the app within the app marketplace.
 
+*Example Usage*
 ````java
-AdPrompt adPrompt = new AdPrompt(this, "YOUR_ZONE_ID");
-adPrompt.showAdPrompt();
+import com.tapit.advertising.*;
+
+// ...
+
+TapItAdPrompt adPrompt = TapItAdvertising.get().getAdPromptForZone(this, "YOUR_ADPROMPT_ZONE_ID");
+adPrompt.show();
 ````
 
-Sample implementation can be found here: https://github.com/tapit/TapIt-Android-SDK-Source/blob/master/src/example/src/com/yourcompany/TapItTestActivity.java#L178
+Advanced implementation can be found in the [Example Code](https://github.com/tapit/TapIt-Android-SDK-Source/blob/master/src/example/src/com/tapit/example/MyActivity.java)
 
 
 Banner Usage
 ------------
+Banners are inline ads that are shown alongside your apps interface.
+
+*Xml Only Usage*
+Add this in you layout xml:
 ````xml
 <!-- Add banner to your layout xml -->
-<!-- this will center a 320x50 ad at the bottom of the screen, -->
-<!-- assuming a RelativeLayout is used -->
-<com.tapit.adview.AdView
+<!-- this will cause a 320x50 ad to be created, automatically kicking off ad rotation -->
+<com.tapit.advertising.TapItBannerAdView
     android:id="@+id/bannerAd"
     android:layout_width="320dp"
     android:layout_height="50dp"
-    android:layout_alignParentBottom="true"
-    android:layout_centerHorizontal="true"
     zone="YOUR_ZONE_ID" />
 ````
 
-````java
-import com.tapit.adview.AdView;
-// ...
-private AdView bannerAd;
-// ...
-bannerAd = (AdView)findViewById(R.id.bannerAd);
-
-// you can optionally register a listener to be notified of banner lifecyle events:
-bannerAd.setOnAdDownload(new OnAdDownload() {
-    // anonymous listener
-
-    public void begin(AdViewCore adView) {
-        // fired before banner download begins.
-    }
-
-    public void end(AdViewCore adView) {
-        // fired after banner content fully downloaded.
-    }
-
-    public void error(AdViewCore adView, String error) {
-        // fired after fail to download content.
-    }
-
-    public void clicked(AdViewCore adView) {
-        // fired after a user taps the ad.
-    }
-
-    public void willPresentFullScreen(AdViewCore adView) {
-        // fired just before an ad takes over the screen.
-    }
-
-    public void didPresentFullScreen(AdViewCore adView) {
-        // fired once an ad takes over the screen.
-        // Stop updating your UI to allow for a smooth ad experience
-    }
-
-    public void willDismissFullScreen(AdViewCore adView) {
-        // fired just before an ad dismisses it's full screen view.
-    }
-
-    public void willLeaveApplication(AdViewCore adView) {
-        // fired just before the app will be sent to the background.
-    }
-});
+*Example Code Usage*
+Add this in you layout xml: (note that "zone" is not specified)
+````xml
+<!-- Add banner to your layout xml -->
+<!-- this will cause a 320x50 ad to be created, automatically kicking off ad rotation -->
+<com.tapit.advertising.TapItBannerAdView
+    android:id="@+id/bannerAd"
+    android:layout_width="320dp"
+    android:layout_height="50dp" />
 ````
 
-Sample implementation can be found here: https://github.com/tapit/TapIt-Android-SDK-Source/blob/master/src/example/src/com/yourcompany/TapItTestActivity.java#L59
+Add this to your activity:
+````java
+import com.tapit.advertising.*;
+
+// ...
+
+TapItBannerAdView bannerAdView = (TapItBannerAdView)findViewById(R.id.bannerAdView);
+bannerAdView.startRequestingAdsForZone("YOUR_BANNER_ZONE_ID");
+````
+
+Advanced implementation can be found in the [Example Code](https://github.com/tapit/TapIt-Android-SDK-Source/blob/master/src/example/src/com/tapit/example/MyActivity.java)
 
 
 Interstitial Usage
 ------------------
 Interstitials are best used at discrete stopping points in your app's flow, such as at the end of a game level, or when the player dies.
 
-*Simple Implementation*
+*Example Usage*
 ````java
-AdInterstitialView interstitialAd; // class property
+import com.tapit.advertising.*;
 
-...
+// ...
 
-interstitialAd = new AdInterstitialView(this, "YOUR_ZONE_ID");
-interstitialAd.load(); // request an ad from the server, to be displayed later...
-
-... // some time passes as your app continues normally
-
-// when you're ready to display interstitial,
-if(interstitialAd.isLoaded()) {
-    // interstitial was loaded successfully, show it!
-    interstitialAd.showInterstitial();
-}
+TapItInterstitialAd interstitialAd = TapItAdvertising.get().getInterstitialAdForZone(this, "YOUR_INTERSTITIAL_ZONE_ID");
+interstitialAd.show();
 ````
 
-*Advanced Implementation*
-
-For more control of the interstitial lifecycle, listen for ``OnInterstitialAdDownload`` events
-````java
-AdInterstitialView interstitialAd; // class property
-
-...
-
-interstitialAd = new AdInterstitialView(this, "YOUR_ZONE_ID");
-// register a listener to be notified on interstitial state changes
-interstitialAd.setOnInterstitialAdDownload(new OnInterstitialAdDownload() {
-    // anonymous listener
-
-    public void willLoad(AdViewCore adView) {
-        // fired before banner download begins.
-    }
-
-    public void ready(AdViewCore adView) {
-        // fired after banner content is fully downloaded.
-        // you can show the interstitial at any time after receiving this event.
-
-        // in this example, we show the interstitial as soon as it's ready
-        interstitialAd.showInterstitial();
-    }
-
-    public void willOpen(AdViewCore adView) {
-        // fired just before an action is fired.
-        // Stop updating your UI to allow for a smooth ad experience
-    }
-
-    public void didClose(AdViewCore adView) {
-        // fired after an interstitial closes and your app is again visible.
-        // Start updating your UI again.
-    }
-
-    public void error(AdViewCore adView, String error) {
-        // fired if the interstitial request fails to return an ad.
-        // Throw this interstitial object away.
-    }
-
-    public void clicked(AdViewCore adView) {
-        // fired after a user taps the ad.
-    }
-
-    public void willLeaveApplication(AdViewCore adView) {
-        // fired just before the app will be sent to the background.
-    }
-});
-interstitialAd.load(); // request an ad from the server, to be displayed later...
-````
-
-Sample implementation can be found here: https://github.com/tapit/TapIt-Android-SDK-Source/blob/master/src/example/src/com/yourcompany/TapItTestActivity.java#L191
+Advanced implementation can be found in the [Example Code](https://github.com/tapit/TapIt-Android-SDK-Source/blob/master/src/example/src/com/tapit/example/MyActivity.java)
 
 
 Video Ads Usage
 ----------------
-TVAST SDK Version 1.0.3
+Video ads are interstitials that play a video.  They are best used at discrete
+stopping points in your app's flow, such as at the end of a game level, or when the player dies.
 
-For sample video ads integration code, please see the VideoAdActivity.java and supporting VideoFullScreenActivity.java files for working example of video ads in an app.  You can find the above mentioned files in the src directory under com.tvast.tvastsdktest folder in this project.
+*Example Usage*
+````java
+import com.tapit.advertising.*;
 
-The TapItVAST SDK is resides in the included tapitvastsdk.jar file in the "lib" folder of this project.  The tapitvastsdk.jar file should be copied to the libs folder of any project that wishes to offer videos ads using the TapItVAST SDK.
- 
-Essentially, what needs to be included in the code are as follows:
+// ...
 
-  public final static String VIDEO_ZONE_ID = "22219";
-  public final static String VIDEO_TYPE = "pre-roll";
-
-  android.util.Log.d("TapItVASTSDKTest", "TapItVAST SDK Version: " + TVASTAd.VERSION);
-
-  mVideoPlayer = (DemoPlayer) findViewById(R.id.contentVideo);
-  mAdPlayer = (DemoPlayer) findViewById(R.id.adVideo);
-
-  mAdsLoader = new TVASTAdsLoader(this);
-  mAdsLoader.addAdErrorListener(this);
-  mAdsLoader.addAdsLoadedListener(this);
-
-  setButtonListeners();
-  mVideoPlayer.addCallback(this);
-  mAdPlayer.addCallback(this);
-
-
-  protected void requestAd() {
-    TVASTAdsRequest request = new TVASTAdsRequest(VIDEO_ZONE_ID);
-    request.setRequestParameter("videotype", VIDEO_TYPE);
-    mAdsLoader.requestAds(request);
-  }
-
-  @Override
-  public void onAdError(TVASTAdErrorEvent event) {
-    toConsole("Ads error: " + event.getError().getMessage() + "\n");
-    mResetAdButton.setEnabled(true);
-    mRequestAdButton.setEnabled(true);
-  }
-
-  @Override
-  public void onAdsLoaded(TVASTAdsLoadedEvent event) {
-    toConsole("Ads loaded!");
-    mAdsManager = (TVASTVideoAdsManager) event.getManager();
-    mAdsManager.addAdErrorListener(this);
-    mAdsManager.addAdEventListener(this);
-    mResetAdButton.setEnabled(true);
-    mRequestAdButton.setEnabled(true);
-
-    mAdsManager.setIsFullscreen(mFullscreenAdCheckBox.isChecked());
-    if (mAdsManager.isFullscreen()) {
-		Intent intent = new Intent(this, VideoFullScreenActivity.class);
-		TVASTSharable sharedAdsManager = new TVASTSharable(mAdsManager);
-		intent.putExtra(VideoFullScreenActivity.EXTRA_AD_MANAGER, sharedAdsManager);
-		startActivity(intent);
-    }		
-    else
-    	mAdsManager.play(mAdPlayer);
-  }
-
-  @Override
-  public void onAdEvent(TVASTAdEvent event) {
-    toConsole("Event:" + event.getEventType());
-
-    switch (event.getEventType()) {
-      case CONTENT_PAUSE_REQUESTED:
-        if (mContentStarted) {
-        	mVideoPlayer.pauseContent();
-        	mVideoPlayer.getVideoView().setVisibility(View.GONE);
-        	mAdPlayer.getVideoView().setVisibility(View.VISIBLE);
-        	mAdPlayer.bringToFront();
-        	mAdPlaying = true;
-        }
-        break;
-      case CONTENT_RESUME_REQUESTED:
-        if (mContentStarted) {
-        	mVideoPlayer.resumeContent();
-        	mVideoPlayer.getVideoView().setVisibility(View.VISIBLE);
-        	mVideoPlayer.bringToFront();
-        	mAdPlayer.getVideoView().setVisibility(View.GONE);
-        	mAdPlaying = false;
-        }
-        break;
-      case CLICK:
-        mAdsManager.loadDestinationUrl(mWebView);
-    	break;
-    }
-  }
-
-
-ProGuard Settings
------------------
-Recommended ProGuard settings can be found here:
-https://github.com/tapit/TapIt-Android-SDK-Source/blob/master/src/example/proguard-project.txt
+TapItVideoInterstitialAd videoAd = TapItAdvertising.get().getVideoInterstitialAdForZone(this, "YOUR_VIDEO_ZONE_ID");
+videoAd.show();
+````
+Advanced implementation can be found in the [Example Code](https://github.com/tapit/TapIt-Android-SDK-Source/blob/master/src/example/src/com/tapit/example/MyActivity.java)

@@ -1,59 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
     android:layout_width="fill_parent"
-    android:layout_height="fill_parent"
-    android:orientation="vertical" >
+    android:layout_height="fill_parent">
 
-    <LinearLayout
-        android:id="@+id/mainLayout"
-        android:layout_width="fill_parent"
+    <Button
+        android:id="@+id/adpromptButton"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="vertical" >
-        <TextView
-            android:id="@+id/tapitText"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/tapit_buttons" />
-        <Button
-            android:id="@+id/loadVideoAdButton"
-            android:text="@string/video_ad_showcase"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content" />
-        <Button
-            android:id="@+id/loadInterstitialButton"
-            android:text="Load Interstitial"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content" />
-        <Button
-            android:id="@+id/showInterstitialButton"
-            android:text="Show Interstitial"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content" />
-        <Button
-            android:id="@+id/loadAdPromptButton"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:text="Load Alert Ad" />
-        <Button
-            android:id="@+id/showAdPromptButton"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:text="Show Alert Ad" />
-        <Button
-            android:id="@+id/loadAdMobButton"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content"
-            android:text="AdMob Mediation"
-            android:layout_marginTop="20dp"
-            android:enabled="false" />
-    </LinearLayout>
+        android:text="@string/adprompt"
+        android:onClick="fireAdPrompt" />
 
-    <com.tapit.adview.AdView
-        android:id="@+id/bannerAd"
+    <Button
+        android:id="@+id/interstitialButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/interstitial"
+        android:onClick="fireInterstitial" />
+
+    <Button
+        android:id="@+id/videoInterstitialButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/video"
+        android:onClick="fireVideoInterstitial" />
+
+    <Button
+        android:id="@+id/bannerButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/banner"
+        android:onClick="fireBanner" />
+
+    <com.tapit.advertising.TapItBannerAdView
+        android:id="@+id/bannerAdView"
         android:layout_width="320dp"
-        android:layout_height="50dp"
-        android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true"
-        zone="7979" />
+        android:layout_height="50dp" />
 
-</RelativeLayout>
+</LinearLayout>
+

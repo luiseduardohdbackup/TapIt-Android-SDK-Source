@@ -10,6 +10,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.UUID;
 
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.telephony.TelephonyManager;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
@@ -143,17 +144,36 @@ public class Utils {
 		return manager.getNetworkOperator();
 	}
 
-    public static String getStringResource(final Context ctx, final String name) {
-        if(name == null || !name.startsWith("@string/")) {
+    private static String getResource(final Context ctx, final String name, final String resourceType) {
+        String rsString = String.format("@%s/", resourceType);
+        if(name == null || !name.startsWith(rsString)) {
             return name;
         }
 
-        final String propName = name.substring(8);
-        int resId = ctx.getResources().getIdentifier(propName, "string", ctx.getPackageName());
+        final String propName = name.substring(rsString.length());
+        int resId = ctx.getResources().getIdentifier(propName, resourceType, ctx.getPackageName());
         if (resId > 0) {
             return ctx.getResources().getString(resId);
         }
 
         return null;
+    }
+
+    public static String getStringResource(final Context ctx, final String name) {
+        return getResource(ctx, name, "string");
+    }
+
+    public static Integer getIntegerResource(final Context ctx, final String name, Integer defaultVal) {
+        String res = getResource(ctx, name, "integer");
+        if (res == null) {
+            return defaultVal;
+        }
+        return Integer.valueOf(res);
+    }
+
+    public static boolean hasPermission(Context context, String permission) {
+        PackageManager pm = context.getPackageManager();
+        int result = pm.checkPermission(permission, context.getPackageName());
+        return (result == PackageManager.PERMISSION_GRANTED);
     }
 }
