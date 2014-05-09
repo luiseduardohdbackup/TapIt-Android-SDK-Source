@@ -12,13 +12,13 @@
  * These go outside of the {@code application} tag:
  *
  * <pre>
- * &lt;uses-permission android:name="android.permission.INTERNET"&gt;&lt;/uses-permission&gt;
- * uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"&gt;&lt;/uses-permission&gt;
- * &lt;uses-permission android:name="android.permission.READ_PHONE_STATE"&gt;&lt;/uses-permission&gt;
+ * &lt;uses-permission android:name="android.permission.INTERNET"/&gt;
+ * uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/&gt;
+ * &lt;uses-permission android:name="android.permission.READ_PHONE_STATE"/&gt;
  *
  * &lt;!-- Optional permissions to enable ad geotargeting
- * &lt;uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"&gt;&lt;/uses-permission&gt;
- * &lt;uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"&gt;&lt;/uses-permission&gt;
+ * &lt;uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/&gt;
+ * &lt;uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/&gt;
  * --&gt;
  * </pre>
  *
@@ -29,7 +29,7 @@
  * &lt;!-- inside of your application tag: --&gt;
  * &lt;activity
  *      android:name="com.tapit.advertising.internal.TapItAdActivity"
- *      android:configChanges="keyboard|keyboardHidden|orientation" /&gt;
+ *      android:configChanges="keyboard|keyboardHidden|orientation|screenSize" /&gt;
  * </pre>
  *
  */

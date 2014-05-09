@@ -3,9 +3,10 @@ package com.tapit.adview;
 import java.io.File;
 import java.io.IOException;
 
-import android.util.Log;
+import com.tapit.core.TapItLog;
 
 public class AdLog {
+    private static final String TAG = "TapIt";
 
     /*
      * Where logLever can be one of:
@@ -60,7 +61,7 @@ public class AdLog {
             String cmd = "logcat -v time -f " + filename.getAbsolutePath();
             Runtime.getRuntime().exec(cmd);
         } catch (IOException e) {
-            Log.e("TapIt", "An error occured", e);
+            TapItLog.e(TAG, "An error occured", e);
         }
     }
 
@@ -75,13 +76,13 @@ public class AdLog {
         if (Level <= currentLogLevel) {
             switch (Type) {
             case LOG_TYPE_ERROR:
-                Log.e(resultTag, msg + ' ');
+                TapItLog.e(resultTag, msg + ' ');
                 break;
             case LOG_TYPE_WARNING:
-                Log.w(resultTag, msg + ' ');
+                TapItLog.w(resultTag, msg + ' ');
                 break;
             default:
-                Log.i(resultTag, msg + ' ');
+                TapItLog.i(resultTag, msg + ' ');
             }
         }
     }

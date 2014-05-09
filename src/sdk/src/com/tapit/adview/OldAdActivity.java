@@ -5,19 +5,20 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup.LayoutParams;
-import android.view.Window;
 import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.LinearLayout;
 import com.tapit.adview.AdViewCore.OnInterstitialAdDownload;
+import com.tapit.core.TapItLog;
 
 @Deprecated
 public class OldAdActivity extends Activity {
+    private static final String TAG = "TapIt";
+
     public static AdInterstitialBaseView adView; // this will only be set for interstitials
     public static AdViewCore callingAdView; // this will only be set for banner ads
 
@@ -44,11 +45,6 @@ public class OldAdActivity extends Activity {
     }
 
     private void setupWebView(Bundle savedInstanceState) {
-        getWindow().requestFeature(Window.FEATURE_PROGRESS);
-
-        // Makes Progress bar Visible
-        getWindow().setFeatureInt(Window.FEATURE_PROGRESS, Window.PROGRESS_VISIBILITY_ON);
-
         WebView webView = new WebView(this);
         webView.setLayoutParams(new LinearLayout.LayoutParams(LayoutParams.FILL_PARENT,
                 LayoutParams.FILL_PARENT, 1f));
@@ -84,7 +80,7 @@ public class OldAdActivity extends Activity {
                         startActivityForResult(intent,3);
                     }
                     catch(Exception e) {
-                        Log.e("TapIt", "An error occured", e);
+                        TapItLog.e(TAG, "An error occured", e);
                     }
                     return true;
                 }
@@ -116,7 +112,10 @@ public class OldAdActivity extends Activity {
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_BACK) {
-                finish();
+            if (adView != null) {
+                adView.onKeyDown(keyCode, event);
+            }
+            finish();
             return true;
         }
         return false;

@@ -1,7 +1,7 @@
 TapIt Android SDK
 =================
 
-Version 1.8.0
+Version 2.0.1
 
 This is the Android SDK for the TapIt! mobile ad network. Go to http://tapit.com/ for more details and to sign up.
 
@@ -22,24 +22,24 @@ for legacy API documentation.*
 
 * To install, extract the [TapIt SDK Archive](https://github.com/tapit/TapIt-Android-SDK-Source/raw/master/dist/TapItSDK.zip) into your project's `/libs` folder, and add `TapItSDK.jar` into the project's build path:
 
-* Set TapItAdView.jar to be exported as part of your apk file:
+* Set `TapItSDK.jar` to be exported as part of your apk file:
 
 * Update your `AndroidManifest.xml` to include the following permissions and activity:
 
 ````xml
-<uses-permission android:name="android.permission.INTERNET"></uses-permission>
-<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"></uses-permission>
-<uses-permission android:name="android.permission.READ_PHONE_STATE"></uses-permission>
+<uses-permission android:name="android.permission.INTERNET"/>
+<uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+<uses-permission android:name="android.permission.READ_PHONE_STATE"/>
 
 <!-- Optional permissions to enable ad geotargeting
-<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"></uses-permission>
-<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"></uses-permission>
+<uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+<uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
 -->
 
 <!-- inside of the application tag: -->
 <activity
     android:name="com.tapit.adview.AdActivity"
-    android:configChanges="keyboard|keyboardHidden|orientation" />
+    android:configChanges="keyboard|keyboardHidden|orientation|screenSize" />
 
 ````
 See [AndroidManifest.xml](https://github.com/tapit/TapIt-Android-SDK-Source/blob/master/src/example/AndroidManifest.xml) for an example manifest file.
@@ -47,22 +47,6 @@ See [AndroidManifest.xml](https://github.com/tapit/TapIt-Android-SDK-Source/blob
 **NOTE:** Zones correspond to a specific ad type, which is specified through the TapIt dashboard.  Please ensure that you use the correct Zone ID for your ad units or you may experience un-expected results.
 
 A sample project is included in this repo.  See [Example Code](https://github.com/tapit/TapIt-Android-SDK-Source/tree/master/src/example) for a live demo.
-
-AdPrompt Usage
---------------
-AdPrompts are a simple ad unit designed to have a native feel. The user is given the option to download an app, and if they accept, they are taken to the app within the app marketplace.
-
-*Example Usage*
-````java
-import com.tapit.advertising.*;
-
-// ...
-
-TapItAdPrompt adPrompt = TapItAdvertising.get().getAdPromptForZone(this, "YOUR_ADPROMPT_ZONE_ID");
-adPrompt.show();
-````
-
-Advanced implementation can be found in the [Example Code](https://github.com/tapit/TapIt-Android-SDK-Source/blob/master/src/example/src/com/tapit/example/MyActivity.java)
 
 
 Banner Usage
@@ -98,11 +82,11 @@ import com.tapit.advertising.*;
 
 // ...
 
-TapItBannerAdView bannerAdView = (TapItBannerAdView)findViewById(R.id.bannerAdView);
+TapItBannerAdView bannerAdView = (TapItBannerAdView)findViewById(R.id.bannerAd);
 bannerAdView.startRequestingAdsForZone("YOUR_BANNER_ZONE_ID");
 ````
 
-Advanced implementation can be found in the [Example Code](https://github.com/tapit/TapIt-Android-SDK-Source/blob/master/src/example/src/com/tapit/example/MyActivity.java)
+Advanced implementation can be found in the [Example Code](https://github.com/tapit/TapIt-Android-SDK-Source/blob/master/src/example/src/com/yourcompany/example/AdvertisingSample.java)
 
 
 Interstitial Usage
@@ -119,7 +103,7 @@ TapItInterstitialAd interstitialAd = TapItAdvertising.get().getInterstitialAdFor
 interstitialAd.show();
 ````
 
-Advanced implementation can be found in the [Example Code](https://github.com/tapit/TapIt-Android-SDK-Source/blob/master/src/example/src/com/tapit/example/MyActivity.java)
+Advanced implementation can be found in the [Example Code](https://github.com/tapit/TapIt-Android-SDK-Source/blob/master/src/example/src/com/yourcompany/example/AdvertisingSample.java)
 
 
 Video Ads Usage
@@ -136,4 +120,4 @@ import com.tapit.advertising.*;
 TapItVideoInterstitialAd videoAd = TapItAdvertising.get().getVideoInterstitialAdForZone(this, "YOUR_VIDEO_ZONE_ID");
 videoAd.show();
 ````
-Advanced implementation can be found in the [Example Code](https://github.com/tapit/TapIt-Android-SDK-Source/blob/master/src/example/src/com/tapit/example/MyActivity.java)
+Advanced implementation can be found in the [Example Code](https://github.com/tapit/TapIt-Android-SDK-Source/blob/master/src/example/src/com/yourcompany/example/AdvertisingSample.java)

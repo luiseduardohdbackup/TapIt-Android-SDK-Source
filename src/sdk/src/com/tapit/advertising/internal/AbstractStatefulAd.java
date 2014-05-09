@@ -2,28 +2,43 @@ package com.tapit.advertising.internal;
 
 import com.tapit.core.TapItLog;
 
+/**
+ * logic for tracking ad state, such as ignoring load requests to ads that are
+ * currently loading, and handling automatic "load and show" functionality when
+ * end user calls ad.show() before ad.load().
+ *
+ * This class is not thread safe.
+ */
 public abstract class AbstractStatefulAd {
     protected static final String TAG = "TapIt";
 
-    protected enum State { NEW, LOADING, LOADED, SHOWN, DONE }
+    protected static enum State { NEW, LOADING, LOADED, SHOWN, DONE }
     protected boolean showImmediately = false;
     protected State state = State.NEW;
 
-    protected boolean updateState(State newState) {
+    /**
+     * moves to the next state, if particular state transition is allowed.  If
+     * transition is not allowed, state is not changed.
+     * @param newState the state to update to
+     * @return true if state change was successful, false if it was blocked.
+     */
+    protected boolean ratchetState(State newState) {
         if (newState.compareTo(state) > 0) {
-            synchronized(this) {
-                state = newState;
-            }
+            state = newState;
             return true;
         }
         TapItLog.d(TAG, "Invalid state transition: " + state + " -> " + newState);
         return false;
     }
 
+    /**
+     * fill this in w/ the actual ad loading behavior, such as making a request
+     * to the ad server
+     */
     public abstract void doLoad();
 
     public void load() {
-        if (updateState(State.LOADING)) {
+        if (ratchetState(State.LOADING)) {
             doLoad();
         }
         else if (state == State.LOADING) {
@@ -40,6 +55,10 @@ public abstract class AbstractStatefulAd {
         return (state == State.LOADED);
     }
 
+    /**
+     * fill this in w/ the actual ad show behavior, such as displaying ad view,
+     * or popping up an activity.
+     */
     public abstract void doShow();
 
     public void show() {
@@ -55,7 +74,7 @@ public abstract class AbstractStatefulAd {
 
             case LOADED:
                 doShow();
-                updateState(State.SHOWN);
+                ratchetState(State.SHOWN);
 
                 break;
 

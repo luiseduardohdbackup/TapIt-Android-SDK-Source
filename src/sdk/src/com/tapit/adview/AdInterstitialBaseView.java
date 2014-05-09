@@ -1,17 +1,19 @@
 package com.tapit.adview;
 
-import android.app.Activity;
 import android.content.Context;
-import android.util.Log;
-import android.view.Display;
+import android.view.Gravity;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import android.widget.RelativeLayout;
 
 import com.tapit.advertising.internal.*;
 import com.tapit.advertising.internal.TapItAdActivity;
+import com.tapit.core.TapItLog;
 
 public abstract class AdInterstitialBaseView extends AdView implements AdViewCore.OnAdDownload {
 
+    @Deprecated
     public enum FullscreenAdSize {
         AUTOSIZE_AD     ( -1,  -1),
         MEDIUM_RECTANGLE(300, 250);
@@ -27,51 +29,21 @@ public abstract class AdInterstitialBaseView extends AdView implements AdViewCor
         
     protected final Context context;
 //    protected Context callingActivityContext;
-    protected RelativeLayout interstitialLayout;
+    protected RelativeLayout interstitialLayout = null;
     protected boolean isLoaded = false;
-    protected OnInterstitialAdDownload interstitialListener;
+    protected OnInterstitialAdDownload interstitialListener = null;
         
         
     public AdInterstitialBaseView(Context ctx, String zone) {
         super(ctx, zone);
         context = ctx;
-        setAdSize(FullscreenAdSize.AUTOSIZE_AD); // default to auto-sizing banner
         setOnAdDownload(this);
 //        setOnAdClickListener(this);
         super.setUpdateTime(0); // disable add cycling
     }
 
-    public void setAdSize(FullscreenAdSize adSize) {
-        int width = adSize.width;
-        int height = adSize.height;
-
-        if(width <= 0) {
-            Display display = ((Activity) context).getWindowManager().getDefaultDisplay();
-            int screenHeight = display.getHeight();
-            int screenWidth = display.getWidth();
-
-            int adWidth = getWidth();
-            if(adWidth <= 0) {
-                adWidth = screenWidth;
-            }
-            int adHeight = getHeight();
-            if(adHeight <= 0) {
-                adHeight = screenHeight;
-            }
-            for(FullscreenAdSize fsas : FullscreenAdSize.values()) {
-                if(fsas.width <= adWidth && fsas.height <= adHeight 
-                        && (fsas.width > width || fsas.height > height)) {
-                    width = fsas.width;
-                    height = fsas.height;
-                }
-            }
-        }
-
-        if ((adRequest != null)) {
-            adRequest.setHeight(height);
-            adRequest.setWidth(width);
-        }
-    }
+    @Deprecated
+    public final void setAdSize(FullscreenAdSize adSize) {}
 
     public abstract View getInterstitialView(Context ctx);
 
@@ -118,7 +90,21 @@ public abstract class AdInterstitialBaseView extends AdView implements AdViewCor
 
             @Override
             public View getContentView(TapItAdActivity activity) {
+                setMraidExpandedActivity(activity);
                 return AdInterstitialBaseView.this;
+            }
+
+            @Override
+            public ViewGroup.LayoutParams getContentLayoutParams() {
+                if (mraid) {
+                    return new FrameLayout.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            Gravity.CENTER);
+                }
+                else {
+                    return super.getContentLayoutParams();
+                }
             }
 
             @Override
@@ -131,6 +117,10 @@ public abstract class AdInterstitialBaseView extends AdView implements AdViewCor
             }
         };
 
+        if (mraid) {
+            syncMraidState();
+            fireMraidEvent(Mraid.MraidEvent.VIEWABLECHANGE, "true");
+        }
         TapItAdActivity.startActivity(context, wrapper);
     }
 
@@ -212,6 +202,10 @@ public abstract class AdInterstitialBaseView extends AdView implements AdViewCor
     @Override
     public void willDismissFullScreen(AdViewCore adView) {
         // noop
+//        if(interstitialListener != null) {
+//            interstitialListener.didClose(adView);
+//        }
+
     }
 
     public OnInterstitialAdDownload getOnInterstitialAdDownload() {
@@ -246,7 +240,7 @@ public abstract class AdInterstitialBaseView extends AdView implements AdViewCor
 
 //    @Override
 //    public boolean onKeyDown(int keyCode, KeyEvent event)  {
-//        Log.d("TapIt", "AdInterstitialBaseView.onKeyDown");
+//        TapItLog.d(TAG, "AdInterstitialBaseView.onKeyDown");
 //        // Close interstitial properly on back button press
 //        if (keyCode == KeyEvent.KEYCODE_BACK && event.getRepeatCount() == 0) {
 //            closeInterstitial();
@@ -282,15 +276,15 @@ public abstract class AdInterstitialBaseView extends AdView implements AdViewCor
            if(desiredClass != null)
                id = desiredClass.getField(name).getInt(desiredClass);
        } catch (ClassNotFoundException e) {
-           Log.e("TapIt", "An error occurred", e);
+           TapItLog.e(TAG, "An error occurred!", e);
        } catch (IllegalArgumentException e) {
-           Log.e("TapIt", "An error occurred", e);
+           TapItLog.e(TAG, "An error occurred", e);
        } catch (SecurityException e) {
-           Log.e("TapIt", "An error occurred", e);
+           TapItLog.e(TAG, "An error occurred", e);
        } catch (IllegalAccessException e) {
-           Log.e("TapIt", "An error occurred", e);
+           TapItLog.e(TAG, "An error occurred", e);
        } catch (NoSuchFieldException e) {
-           Log.e("TapIt", "An error occurred", e);
+           TapItLog.e(TAG, "An error occurred", e);
        }
 
        return id;

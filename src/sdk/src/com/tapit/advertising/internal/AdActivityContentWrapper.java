@@ -1,6 +1,9 @@
 package com.tapit.advertising.internal;
 
+import android.view.Gravity;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.FrameLayout;
 
 /**
  * Used to pass necessary data to {@link TapItAdActivity}
@@ -12,6 +15,17 @@ public abstract class AdActivityContentWrapper {
      * @return the view to be used as TapItAdActivity's content view.
      */
     public abstract View getContentView(TapItAdActivity activity);
+
+    /**
+     * By default, LP's are set to wrap content, with center gravity.
+     * @return the layout params to use when adding the content view.
+     */
+    public ViewGroup.LayoutParams getContentLayoutParams() {
+        return new FrameLayout.LayoutParams(
+                                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                                    Gravity.CENTER);
+    }
 
     /**
      * Called when activity finished and control has returned to the app

@@ -10,7 +10,7 @@
         android:layout_height="wrap_content"
         android:orientation="vertical" >
         <TextView
-            android:id="@+id/tapitText"
+            android:id="@+id/deviceIdentifier"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:text="" />

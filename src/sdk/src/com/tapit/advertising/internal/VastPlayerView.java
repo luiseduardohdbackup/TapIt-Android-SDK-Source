@@ -2,19 +2,15 @@ package com.tapit.advertising.internal;
 
 import android.content.Context;
 import android.util.AttributeSet;
-import android.util.DisplayMetrics;
 import android.view.Gravity;
-import android.view.MotionEvent;
-import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 import android.widget.VideoView;
 import com.tapit.core.TapItLog;
-import com.phunware.tapitvastsdk.player.TVASTPlayer;
-import com.phunware.tapitvastsdk.player.TVASTTrackingVideoView;
+import com.tapit.vasksdk.player.TVASTPlayer;
+import com.tapit.vasksdk.player.TVASTTrackingVideoView;
 
-import java.text.NumberFormat;
 
 public class VastPlayerView extends FrameLayout implements TVASTPlayer, TVASTPlayer.TVASTAdPlayerListener {
     private static final String TAG = "TapIt";
@@ -41,8 +37,6 @@ public class VastPlayerView extends FrameLayout implements TVASTPlayer, TVASTPla
     private void setup() {
         videoView = new TVASTTrackingVideoView(getContext(), this);
         videoView.addCallback(this);
-
-        DisplayMetrics metrics = getResources().getDisplayMetrics();
 
         FrameLayout.LayoutParams lp = new LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
@@ -142,7 +136,7 @@ public class VastPlayerView extends FrameLayout implements TVASTPlayer, TVASTPla
 
     /**
      * hijack touch listener so that it only applies to the video view...
-     * @param listener
+     * @param listener the OnTouchListener to hijack
      */
     @Override
     public void setOnTouchListener(OnTouchListener listener) {

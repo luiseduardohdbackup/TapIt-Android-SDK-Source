@@ -5,12 +5,12 @@ import java.net.URLEncoder;
 import java.util.*;
 
 import android.content.Context;
-import android.util.Log;
+import com.tapit.core.TapItLog;
 
 public class AdRequest {
-    public static final String TAG = "AdRequest";
+    public static final String TAG = "TapIt";
 
-    private Map<String, String> parameters = Collections.synchronizedMap(new HashMap<String, String>());
+    private Map<String, String> parameters = new HashMap<String, String>();
     private static final String PARAMETER_ZONE = "zone";
     private static final String PARAMETER_ADTYPE = "adtype";
     private static final String PARAMETER_USER_AGENT = "ua";
@@ -32,9 +32,10 @@ public class AdRequest {
 
     private String adserverURL = "http://r.tapit.com/adrequest.php";
 
-    private Map<String, String> customParameters = Collections.synchronizedMap(new HashMap<String, String>());
+    private Map<String, String> customParameters = new HashMap<String, String>();
 
     private AdLog adLog;
+    private boolean isAutomaticLocationTrackingEnabled = true;
 
     public AdRequest(AdLog adLog) {
         this.adLog = adLog;
@@ -61,7 +62,6 @@ public class AdRequest {
         parameters.put(PARAMETER_CARRIER_NAME, carrierName);
         parameters.put(PARAMETER_CARRIER_ID, carrierId);
         parameters.put(PARAMETER_LANGUAGES, Locale.getDefault().getLanguage());
-        parameters.put(PARAMETER_USER_AGENT, ua);
     }
 
     /**
@@ -92,9 +92,7 @@ public class AdRequest {
      */
     public AdRequest setUa(String ua) {
         if (ua != null) {
-            synchronized (parameters) {
-                parameters.put(PARAMETER_USER_AGENT, ua);
-            }
+            parameters.put(PARAMETER_USER_AGENT, ua);
         }
         return this;
     }
@@ -105,11 +103,9 @@ public class AdRequest {
      * @param zone
      * @return
      */
-    public AdRequest setZone(String zone) {
+    public final AdRequest setZone(String zone) {
         if (zone != null) {
-            synchronized (parameters) {
-                parameters.put(PARAMETER_ZONE, zone);
-            }
+            parameters.put(PARAMETER_ZONE, zone);
         }
         return this;
     }
@@ -122,9 +118,7 @@ public class AdRequest {
      */
     public AdRequest setAdtype(String adtype) {
         if (adtype != null) {
-            synchronized (parameters) {
-                parameters.put(PARAMETER_ADTYPE, adtype);
-            }
+            parameters.put(PARAMETER_ADTYPE, adtype);
         }
         return this;
     }
@@ -137,9 +131,7 @@ public class AdRequest {
      */
     public AdRequest setLatitude(String latitude) {
         if (latitude != null) {
-            synchronized (parameters) {
-                parameters.put(PARAMETER_LATITUDE, latitude);
-            }
+            parameters.put(PARAMETER_LATITUDE, latitude);
         }
         return this;
     }
@@ -152,9 +144,7 @@ public class AdRequest {
      */
     public AdRequest setLongitude(String longitude) {
         if (longitude != null) {
-            synchronized (parameters) {
-                parameters.put(PARAMETER_LONGITUDE, longitude);
-            }
+            parameters.put(PARAMETER_LONGITUDE, longitude);
         }
         return this;
     }
@@ -167,9 +157,7 @@ public class AdRequest {
      */
     public AdRequest setParamBG(String paramBG) {
         if (paramBG != null) {
-            synchronized (parameters) {
-                parameters.put(PARAMETER_BACKGROUND, paramBG);
-            }
+            parameters.put(PARAMETER_BACKGROUND, paramBG);
         }
         return this;
     }
@@ -182,9 +170,7 @@ public class AdRequest {
      */
     public AdRequest setParamLINK(String paramLINK) {
         if (paramLINK != null) {
-            synchronized (parameters) {
-                parameters.put(PARAMETER_LINK, paramLINK);
-            }
+            parameters.put(PARAMETER_LINK, paramLINK);
         }
         return this;
     }
@@ -196,11 +182,10 @@ public class AdRequest {
      * @param minSizeX
      * @return
      */
+    @Deprecated
     public AdRequest setMinSizeX(Integer minSizeX) {
         if ((minSizeX != null) && (minSizeX > 0)) {
-            synchronized (parameters) {
-                parameters.put(PARAMETER_MIN_SIZE_X, String.valueOf(minSizeX));
-            }
+            parameters.put(PARAMETER_MIN_SIZE_X, String.valueOf(minSizeX));
         }
         return this;
     }
@@ -212,11 +197,10 @@ public class AdRequest {
      * @param minSizeY
      * @return
      */
+    @Deprecated
     public AdRequest setMinSizeY(Integer minSizeY) {
         if ((minSizeY != null) && (minSizeY > 0)) {
-            synchronized (parameters) {
-                parameters.put(PARAMETER_MIN_SIZE_Y, String.valueOf(minSizeY));
-            }
+            parameters.put(PARAMETER_MIN_SIZE_Y, String.valueOf(minSizeY));
         }
         return this;
     }
@@ -228,11 +212,10 @@ public class AdRequest {
      * @param sizeX
      * @return
      */
+    @Deprecated
     public AdRequest setSizeX(Integer sizeX) {
         if ((sizeX != null) && (sizeX > 0)) {
-            synchronized (parameters) {
-                parameters.put(PARAMETER_SIZE_X, String.valueOf(sizeX));
-            }
+            parameters.put(PARAMETER_SIZE_X, String.valueOf(sizeX));
         }
         return this;
     }
@@ -244,45 +227,36 @@ public class AdRequest {
      * @param sizeY
      * @return
      */
+    @Deprecated
     public AdRequest setSizeY(Integer sizeY) {
         if ((sizeY != null) && (sizeY > 0)) {
-            synchronized (parameters) {
-                parameters.put(PARAMETER_SIZE_Y, String.valueOf(sizeY));
-            }
+            parameters.put(PARAMETER_SIZE_Y, String.valueOf(sizeY));
         }
         return this;
     }
 
     public AdRequest setHeight(Integer height) {
         if ((height != null) && (height > 0)) {
-            synchronized (parameters) {
-                parameters.put(PARAMETER_HEIGHT, String.valueOf(height));
-            }
+            parameters.put(PARAMETER_HEIGHT, String.valueOf(height));
         }
         return this;
     }
 
     public Integer getHeight() {
-        synchronized (parameters) {
-            String height = parameters.get(PARAMETER_HEIGHT);
-            return getIntParameter(height);
-        }
+        String height = parameters.get(PARAMETER_HEIGHT);
+        return getIntParameter(height);
     }
 
     public AdRequest setWidth(Integer width) {
         if ((width != null) && (width > 0)) {
-            synchronized (parameters) {
-                parameters.put(PARAMETER_WIDTH, String.valueOf(width));
-            }
+            parameters.put(PARAMETER_WIDTH, String.valueOf(width));
         }
         return this;
     }
 
     public Integer getWidth() {
-        synchronized (parameters) {
-            String width = parameters.get(PARAMETER_WIDTH);
-            return getIntParameter(width);
-        }
+        String width = parameters.get(PARAMETER_WIDTH);
+        return getIntParameter(width);
     }
 
     /**
@@ -294,100 +268,78 @@ public class AdRequest {
      */
     public AdRequest setConnectionSpeed(Integer connectionSpeed) {
         if (connectionSpeed != null) {
-            synchronized (parameters) {
-                parameters.put(PARAMETER_CONNECTION_SPEED, String.valueOf(connectionSpeed));
-            }
+            parameters.put(PARAMETER_CONNECTION_SPEED, String.valueOf(connectionSpeed));
         }
         return this;
     }
 
     public String getAdtype() {
-        synchronized (parameters) {
-            return parameters.get(PARAMETER_ADTYPE);
-        }
+        return parameters.get(PARAMETER_ADTYPE);
     }
 
     public String getUa() {
-        synchronized (parameters) {
-            return parameters.get(PARAMETER_USER_AGENT);
-        }
+        return parameters.get(PARAMETER_USER_AGENT);
     }
 
     public String getZone() {
-        synchronized (parameters) {
-            return parameters.get(PARAMETER_ZONE);
-        }
+        return parameters.get(PARAMETER_ZONE);
     }
 
     public String getLatitude() {
-        synchronized (parameters) {
-            return parameters.get(PARAMETER_LATITUDE);
-        }
+        return parameters.get(PARAMETER_LATITUDE);
     }
 
     public String getLongitude() {
-        synchronized (parameters) {
-            return parameters.get(PARAMETER_LONGITUDE);
-        }
+        return parameters.get(PARAMETER_LONGITUDE);
     }
 
     public String getParamBG() {
-        synchronized (parameters) {
-            return parameters.get(PARAMETER_BACKGROUND);
-        }
+        return parameters.get(PARAMETER_BACKGROUND);
     }
 
     public String getParamLINK() {
-        synchronized (parameters) {
-            return parameters.get(PARAMETER_LINK);
-        }
+        return parameters.get(PARAMETER_LINK);
     }
 
     /**
      * @deprecated
      */
+    @Deprecated
     public Integer getMinSizeX() {
-        synchronized (parameters) {
-            String minSizeX = parameters.get(PARAMETER_MIN_SIZE_X);
-            return getIntParameter(minSizeX);
-        }
+        String minSizeX = parameters.get(PARAMETER_MIN_SIZE_X);
+        return getIntParameter(minSizeX);
     }
 
     /**
      * @deprecated
      */
+    @Deprecated
     public Integer getMinSizeY() {
-        synchronized (parameters) {
-            String minSizeY = parameters.get(PARAMETER_MIN_SIZE_Y);
-            return getIntParameter(minSizeY);
-        }
+        String minSizeY = parameters.get(PARAMETER_MIN_SIZE_Y);
+        return getIntParameter(minSizeY);
     }
 
     /**
      * @deprecated
      */
+    @Deprecated
     public Integer getSizeX() {
-        synchronized (parameters) {
-            String sizeX = parameters.get(PARAMETER_SIZE_X);
-            return getIntParameter(sizeX);
-        }
+        String sizeX = parameters.get(PARAMETER_SIZE_X);
+        return getIntParameter(sizeX);
     }
 
     /**
      * @deprecated
      */
+    @Deprecated
     public Integer getSizeY() {
-        synchronized (parameters) {
-            String sizeY = parameters.get(PARAMETER_SIZE_Y);
-            return getIntParameter(sizeY);
-        }
+        String sizeY = parameters.get(PARAMETER_SIZE_Y);
+        return getIntParameter(sizeY);
     }
 
     public Integer getConnectionSpeed() {
-        synchronized (parameters) {
-            String connectionSpeed = parameters.get(PARAMETER_CONNECTION_SPEED);
-            return getIntParameter(connectionSpeed);
-        }
+        String connectionSpeed = parameters.get(PARAMETER_CONNECTION_SPEED);
+        return getIntParameter(connectionSpeed);
     }
 
     /**
@@ -397,6 +349,7 @@ public class AdRequest {
      * @param cParams
      * @return
      */
+    @Deprecated
     public void setCustomParameters(Hashtable<String, String> cParams) {
 //        customParameters.putAll(cParams); // this throws a NPE
         for (String key : cParams.keySet()) {
@@ -422,7 +375,7 @@ public class AdRequest {
         return customParameters;
     }
 
-    private Integer getIntParameter(String stringValue) {
+    private static Integer getIntParameter(String stringValue) {
         if (stringValue != null) {
             return Integer.parseInt(stringValue);
         } else {
@@ -433,7 +386,7 @@ public class AdRequest {
     /**
      * Creates URL with given parameters.
      *
-     * @return
+     * @return URL string representing this ad request
      * @throws IllegalStateException
      *             if all the required parameters are not present.
      */
@@ -443,7 +396,7 @@ public class AdRequest {
 
     public synchronized String toString() {
         StringBuilder builderToString = new StringBuilder();
-        String adserverURL = this.adserverURL + "?";
+        String adserverURL = this.adserverURL + '?';
         builderToString.append(adserverURL);
         appendParameters(builderToString, parameters);
         appendParameters(builderToString, customParameters);
@@ -454,27 +407,32 @@ public class AdRequest {
                                             // builderToString.toString();
     }
 
-    private void appendParameters(StringBuilder builderToString, Map<String, String> parameters) {
+    private static void appendParameters(StringBuilder builderToString, Map<String, String> parameters) {
 
         if (parameters != null) {
-            synchronized (parameters) {
-                Set<String> keySet = parameters.keySet();
+            Set<String> keySet = parameters.keySet();
 
-                for (Iterator<String> parameterNames = keySet.iterator(); parameterNames.hasNext();) {
-                    String param = parameterNames.next();
-                    String value = parameters.get(param);
+            for (Map.Entry<String, String> parmEntry : parameters.entrySet()) {
+                String value = parmEntry.getValue();
 
-                    if (value != null) {
-                        try {
-                            builderToString.append("&" + URLEncoder.encode(param, "UTF-8") + "="
-                                    + URLEncoder.encode(value, "UTF-8"));
-                        } catch (UnsupportedEncodingException e) {
-                            Log.e("TapIt", "An error occured", e);
-                        }
+                if (value != null) {
+                    try {
+                        builderToString.append('&')
+                                .append(URLEncoder.encode(parmEntry.getKey(), "UTF-8"))
+                                .append('=').append(URLEncoder.encode(value, "UTF-8"));
+                    } catch (UnsupportedEncodingException e) {
+                        TapItLog.e(TAG, "An error occurred", e);
                     }
                 }
             }
         }
     }
 
+    public void setAutomaticLocationTrackingEnabled(boolean isAutomaticLocationTrackingEnabled) {
+        this.isAutomaticLocationTrackingEnabled = isAutomaticLocationTrackingEnabled;
+    }
+
+    public boolean isAutomaticLocationTrackingEnabled() {
+        return isAutomaticLocationTrackingEnabled;
+    }
 }

@@ -28,7 +28,7 @@
 
     <path id="src.dependencies.pathref">
         <pathelement path="${android.jar}"/>
-        <pathelement path="lib/GoogleAdMobAdsSdk-6.4.1.jar"/>
+        <pathelement path="libs/GoogleAdMobAdsSdk-6.4.1.jar"/>
     </path>
 
     <fileset id="javadoc.src.pathref" dir="${src.dir}">
@@ -41,15 +41,6 @@
         <include name="com/tapit/adview/**/AdPrompt.java"/>
         <include name="com/tapit/mediation/admob/package-info.java"/>
     </fileset>
-
-    <fileset id="rebrand.sdk.root.pathref" dir="${sdk.root}">
-        <include name="src/com/tapit/**" />
-        <include name="src/com/phunware/**" />
-        <exclude name="src/com/phunware/advertising/*AdvertisingModule.java" />
-        <exclude name="lib" />
-    </fileset>
-
-
 
     <fileset id="distributable.pathref" dir=".">
         <include name="LICENSE" />

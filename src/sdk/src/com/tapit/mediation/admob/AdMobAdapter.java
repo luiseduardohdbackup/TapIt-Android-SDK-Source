@@ -225,7 +225,12 @@ public final class AdMobAdapter
             interstitialListener.onLeaveApplication(AdMobAdapter.this);
         }
     }
-        
+
+    @Override
+    public void didResize(AdViewCore adView) {
+        // noop
+    }
+
     /**
      * Interstitial callbacks
      */

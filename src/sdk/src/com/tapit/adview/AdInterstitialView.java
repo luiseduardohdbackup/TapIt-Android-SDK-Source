@@ -78,4 +78,9 @@ public class AdInterstitialView extends AdInterstitialBaseView {
     public void end(AdViewCore adView){
         super.end(adView);
     }
+
+    @Override
+    public void didResize(AdViewCore adView) {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
 }

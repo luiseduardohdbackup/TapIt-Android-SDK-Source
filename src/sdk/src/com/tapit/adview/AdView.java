@@ -1,10 +1,9 @@
 package com.tapit.adview;
 
-import android.app.Activity;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.util.AttributeSet;
-import android.view.Display;
+import android.view.ViewGroup;
 
 import java.util.Map;
 
@@ -94,19 +93,6 @@ public class AdView extends AdViewCore {
         if (adRequest != null) {
             AutoDetectedParametersSet autoDetectedParametersSet = AutoDetectedParametersSet
                     .getInstance();
-
-            if (adRequest.getUa() == null) {
-                if (autoDetectedParametersSet.getUa() == null) {
-                    String userAgent = getSettings().getUserAgentString();
-
-                    if ((userAgent != null) && (userAgent.length() > 0)) {
-                        adRequest.setUa(userAgent);
-                        autoDetectedParametersSet.setUa(userAgent);
-                    }
-                } else {
-                    adRequest.setUa(autoDetectedParametersSet.getUa());
-                }
-            }
         }
 
     }
@@ -124,38 +110,29 @@ public class AdView extends AdViewCore {
         int height = adSize.height;
 
         if(width <= 0) {
-            Display display = ((Activity) ctx).getWindowManager().getDefaultDisplay();
-            int screenHeight = display.getHeight();
-            int screenWidth = display.getWidth();
+            // check if ad container has a specified size
+            ViewGroup.LayoutParams lp = getLayoutParams();
 
-            int adWidth = (int)(getWidth() / mDensity);
-            if(adWidth <= 0) {
-                // if not width is set on view, use screen width
-                adWidth = screenWidth;
-            }
-            int adHeight = (int)(getHeight() / mDensity);
-            if(adHeight <= 0) {
-                // if no height is set on view, use screen height
-                adHeight = screenHeight;
-            }
-            for(BannerAdSize as : BannerAdSize.values()) {
-                if (adSize == BannerAdSize.AUTOSIZE_AD && as == BannerAdSize.MEDIUM_RECTANGLE) {
-                    // Don't consider medium rectangles when auto sizing
-                    // noop
+            if (lp != null) {
+                refreshDisplayMetrics();
+                if (lp.width != ViewGroup.LayoutParams.MATCH_PARENT
+                        && lp.width != ViewGroup.LayoutParams.WRAP_CONTENT) {
+                    width = pxToDip(lp.width);
                 }
-                else {
-                    if(as.width <= adWidth && as.height <= adHeight
-                            && (as.width > width || as.height > height)) {
-                        width = as.width;
-                        height = as.height;
-                    }
+                if (lp.height != ViewGroup.LayoutParams.MATCH_PARENT
+                        && lp.height != ViewGroup.LayoutParams.WRAP_CONTENT) {
+                    height = pxToDip(lp.height);
                 }
             }
         }
 
         if ((adRequest != null)) {
-            adRequest.setHeight(height);
-            adRequest.setWidth(width);
+            if (width > 0) {
+                adRequest.setWidth(width);
+            }
+            if (height > 0) {
+                adRequest.setHeight(height);
+            }
 
             String orientation;
             int orient = ctx.getResources().getConfiguration().orientation;

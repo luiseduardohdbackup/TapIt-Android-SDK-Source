@@ -20,7 +20,7 @@ public final class InterstitialAdImpl extends AbstractStatefulAd implements TapI
      * Call {@link #load()} to initiate ad request.
      */
     public static TapItInterstitialAd getInterstitialAdForZone(Context context, String zone) {
-        TapItAdRequest request = new AdRequestImpl.BuilderImpl(zone).getPwAdRequest();
+        TapItAdRequest request = new AdRequestImpl.BuilderImpl(zone).getTapItAdRequest();
         return InterstitialAdImpl.getInterstitialAd(context, request);
 
     }
@@ -92,7 +92,7 @@ public final class InterstitialAdImpl extends AbstractStatefulAd implements TapI
 
     @Override
     public void ready(AdViewCore adView) {
-        if (updateState(State.LOADED)) {
+        if (ratchetState(State.LOADED)) {
             if (listener != null) {
                 listener.interstitialDidLoad(InterstitialAdImpl.this);
             }
@@ -113,6 +113,7 @@ public final class InterstitialAdImpl extends AbstractStatefulAd implements TapI
         if (listener != null) {
             listener.interstitialDidClose(InterstitialAdImpl.this);
         }
+        legacyInterstitialAd.destroy();
     }
 
     @Override
@@ -120,6 +121,7 @@ public final class InterstitialAdImpl extends AbstractStatefulAd implements TapI
         if (listener != null) {
             listener.interstitialDidFail(InterstitialAdImpl.this, error);
         }
+        ratchetState(State.DONE);
     }
 
     @Override

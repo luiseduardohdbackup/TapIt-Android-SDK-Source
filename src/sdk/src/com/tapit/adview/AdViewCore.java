@@ -1,26 +1,24 @@
 package com.tapit.adview;
 
-import java.io.BufferedInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Hashtable;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.io.*;
+import java.util.*;
 
+import android.annotation.TargetApi;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.*;
 import android.telephony.TelephonyManager;
+import android.util.Pair;
 import android.view.*;
-import com.tapit.advertising.internal.BasicWebView;
-import com.tapit.advertising.internal.TapItAdActivity;
-import com.tapit.advertising.internal.AdActivityContentWrapper;
+import android.webkit.*;
+import com.tapit.advertising.internal.*;
+import com.tapit.core.TapItLog;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.params.CoreProtocolPNames;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -38,16 +36,6 @@ import android.net.NetworkInfo;
 import android.net.Uri;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
-import android.util.Log;
-import android.view.animation.AccelerateInterpolator;
-import android.view.animation.Animation;
-import android.view.animation.Animation.AnimationListener;
-import android.view.animation.DecelerateInterpolator;
-import android.webkit.JsResult;
-import android.webkit.WebChromeClient;
-import android.webkit.WebSettings;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
 
 
@@ -55,15 +43,15 @@ import android.widget.FrameLayout;
  * Viewer of advertising.
  */
 public abstract class AdViewCore extends WebView {
-    public static final String VERSION = "1.8.0";
-    public static final String TAG = "AdViewCore";
+    public static final String VERSION = "2.0.1";
+    public static final String TAG = "TapIt";
 
     private static final long AD_DEFAULT_RELOAD_PERIOD = 120000; // milliseconds
     protected AutoDetectParametersThread autoDetectParametersThread;
     protected LocationManager locationManager;
     protected WhereamiLocationListener listener;
     //    private static final long AD_STOP_CHECK_PERIOD = 10000; // milliseconds
-    Handler handler = new Handler(Looper.getMainLooper());
+    private Handler handler = new Handler(Looper.getMainLooper());
     protected Context context;
     private Integer defaultImageResource;
     private Timer reloadTimer;
@@ -72,7 +60,6 @@ public abstract class AdViewCore extends WebView {
     private long adReloadPeriod = AD_DEFAULT_RELOAD_PERIOD;
     private OnAdDownload adDownload;
 
-    protected float mDensity; // screen pixel density
 //    private int mDefaultHeight; // default height of the view
 //    private int mDefaultWidth; // default width of the view
     private int mInitLayoutHeight; // initial height of the view
@@ -83,75 +70,67 @@ public abstract class AdViewCore extends WebView {
 
     private String mClickURL;
         
-    /**
-     * The b got layout params.
-     */
     private boolean bGotLayoutParams;
         
-    private boolean isBannerAnimationEnabled = true;
-    private boolean animateBack = false;
+    private boolean isBannerAnimationEnabled = false;
+//    private boolean animateBack = false;
     private boolean isFirstTime = true;
         
     private boolean openInInternalBrowser = true;
         
-//    private static final int MESSAGE_RESIZE = 1000;
-//    private static final int MESSAGE_CLOSE = 1001;
-//    private static final int MESSAGE_HIDE = 1002;
-//    private static final int MESSAGE_SHOW = 1003;
-//    private static final int MESSAGE_EXPAND = 1004;
-//    private static final int MESSAGE_SEND_EXPAND_CLOSE = 1005;
-//    private static final int MESSAGE_OPEN = 1006;
-//    private static final int MESSAGE_PLAY_VIDEO = 1007;
-//    private static final int MESSAGE_PLAY_AUDIO = 1008;
-//    private static final int MESSAGE_RAISE_ERROR = 1009;
-
     public static final String DIMENSIONS = "expand_dimensions";
     public static final String PLAYER_PROPERTIES = "player_properties";
     public static final String EXPAND_URL = "expand_url";
     public static final String ACTION_KEY = "action";
-//    private static final String EXPAND_PROPERTIES = "expand_properties";
-//    private static final String RESIZE_WIDTH = "resize_width";
-//    private static final String RESIZE_HEIGHT = "resize_height";
-
-//    private static final String ERROR_MESSAGE = "message";
-//    private static final String ERROR_ACTION = "action";
 
     protected static final int BACKGROUND_ID = 101;
     protected static final int PLACEHOLDER_ID = 100;
     private String userAgent = null;
+    protected boolean mraid = false;
+    private Mraid.MraidState mraidState = Mraid.MraidState.LOADING;
+    private Mraid.MraidPlacementType mraidPlacementType = Mraid.MraidPlacementType.INLINE;
+    private boolean isMraidInitialized = false;
+    private TapItAdActivity mraidExpandedActivity = null;
+
+    private final DisplayMetrics metrics = new DisplayMetrics();
+
+    public Mraid.MraidPlacementType getMraidPlacementType() {
+        return mraidPlacementType;
+    }
+
+    public void setMraidPlacementType(Mraid.MraidPlacementType mraidPlacementType) {
+        this.mraidPlacementType = mraidPlacementType;
+    }
 
     private enum ViewState {
         DEFAULT, RESIZED, EXPANDED, HIDDEN
     }
 
     private ViewState mViewState = ViewState.DEFAULT;
-    public String mDataToInject = null;
-    private static String mScriptPath = null;
-    private static String mBridgeScriptPath = null;
-    private String mContent;
+    private String mDataToInject = null;
+    public static final String mraidBridgePath = "http://dev.tapit.com/~npenteado/mraid/mraid.js";
+    private String mContent = null;
 
-    protected AdLog adLog = new AdLog(this);
+    protected AdLog adLog = null;
 
     private String typeOfBanner = TYPE_BANNER;
         
     private static final String TYPE_BANNER = "banner";
-        
-    private static final String TYPE_ORMMA = "ormma";
-        
-    private static final String TYPE_VIDEO = "video";
-        
-    private static final String TYPE_OFFERWALL = "offerwall";    
+    private static final String TYPE_OFFERWALL = "offerwall";
 
-    public Object lock = new Object();
+    private final Object lock = new Object();
 
-    private LoadContentTask contentTask;
+    private LoadContentTask contentTask = null;
         
     private Integer backgroundColor = Color.TRANSPARENT; 
 
     public enum ACTION {
         PLAY_AUDIO, PLAY_VIDEO
     }
-        
+
+
+    private FrameLayout placeholderView = null;
+
 
     /**
      * Creation of viewer of advertising.
@@ -173,10 +152,6 @@ public abstract class AdViewCore extends WebView {
     /**
      * Creation of viewer of advertising. It is used for element creation in a
      * XML template.
-     * 
-     * @param context
-     * @param attrs
-     * @param defStyle
      */
     public AdViewCore(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
@@ -186,9 +161,6 @@ public abstract class AdViewCore extends WebView {
     /**
      * Creation of viewer of advertising. It is used for element creation in a
      * XML template.
-     * 
-     * @param context
-     * @param attrs
      */
     public AdViewCore(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -198,8 +170,6 @@ public abstract class AdViewCore extends WebView {
     /**
      * Creation of viewer of advertising. It is used for element creation in a
      * XML template.
-     * 
-     * @param context
      */
     public AdViewCore(Context context) {
         super(context);
@@ -215,7 +185,6 @@ public abstract class AdViewCore extends WebView {
 
     /**
      * Set interface for advertising opening.
-     * @param adClickListener
      */
     public void setOnAdClickListener(OnAdClickListener adClickListener) {
         this.adClickListener = adClickListener;
@@ -249,33 +218,33 @@ public abstract class AdViewCore extends WebView {
                 
         /**
          * This event is fired after a user taps the ad.
-         * @param adView
          */
         public void clicked(AdViewCore adView);
 
         /**
          * This event is fired just before an ad takes over the screen.
-         * @param adView
          */
         public void willPresentFullScreen(AdViewCore adView);
                 
         /**
          * This event is fired once an ad takes over the screen.
-         * @param adView
          */
         public void didPresentFullScreen(AdViewCore adView);
                 
         /**
          * This even is fired just before an ad dismisses it's full screen view.
-         * @param adView
          */
         public void willDismissFullScreen(AdViewCore adView);
                 
         /**
          * This event is fired just before the app will be sent to the background.
-         * @param adView
          */
         public void willLeaveApplication(AdViewCore adView);
+
+        /**
+         * This event is fired when the ad is resized.
+         */
+        public void didResize(AdViewCore adView);
     }
 
     /**
@@ -309,13 +278,11 @@ public abstract class AdViewCore extends WebView {
 
         /**
          * This event is fired after a user taps the ad.
-         * @param adView
          */
         public void clicked(AdViewCore adView);
 
         /**
          * This event is fired just before the app will be sent to the background.
-         * @param adView
          */
         public void willLeaveApplication(AdViewCore adView);
     }
@@ -329,8 +296,6 @@ public abstract class AdViewCore extends WebView {
 
     /**
      * Set interface for advertising downloading.
-     * 
-     * @param adDownload
      */
     public void setOnAdDownload(OnAdDownload adDownload) {
         this.adDownload = adDownload;
@@ -350,9 +315,8 @@ public abstract class AdViewCore extends WebView {
     /**
      * @deprecated Use setCustomParameters(Map<String, String> customParameters) instead
      * Optional. Set Custom Parameters.
-     * 
-     * @param customParameters
      */
+    @Deprecated
     public void setCustomParameters(Hashtable<String, String> customParameters) {
         if (adRequest != null) {
             adRequest.setCustomParameters(customParameters);
@@ -361,8 +325,6 @@ public abstract class AdViewCore extends WebView {
 
     /**
      * Optional. Set Custom Parameters.
-     *
-     * @param customParameters
      */
     public void setCustomParameters(Map<String, String> customParameters) {
         if (adRequest != null) {
@@ -395,6 +357,7 @@ public abstract class AdViewCore extends WebView {
 
     /**
      * Optional. Set banner refresh interval (in seconds).
+     * set to 0 to disable auto update
      */
     public void setUpdateTime(int updateTime) {
         boolean b = adReloadPeriod == 0; 
@@ -429,8 +392,9 @@ public abstract class AdViewCore extends WebView {
             paramLINK = Utils.getStringResource(context, attrs.getAttributeValue(null, "paramLINK"));
             defaultImage = attrs.getAttributeResourceValue(null, "defaultImage", -1);
             p = getLongParameter(attrs.getAttributeValue(null, "adReloadPeriod"));
-            if (p != null)
-                this.adReloadPeriod = p; 
+            if (p != null) {
+                this.adReloadPeriod = p;
+            }
             minSizeX = getIntParameter(attrs.getAttributeValue(null, "minSizeX"));
             minSizeY = getIntParameter(attrs.getAttributeValue(null, "minSizeY"));
             sizeX = getIntParameter(attrs.getAttributeValue(null, "sizeX"));
@@ -453,6 +417,7 @@ public abstract class AdViewCore extends WebView {
             String longitude, String ua,
             String paramBG, String paramLINK,
             Map<String, String> customParameters) {
+        adLog = new AdLog(this);
         this.context = context;
         autoDetectParametersThread = new AutoDetectParametersThread(context, this);
 
@@ -461,7 +426,6 @@ public abstract class AdViewCore extends WebView {
         adRequest = new AdRequest(adLog);
         adRequest.initDefaultParameters(context);
         adRequest
-                .setUa(ua)
                 .setZone(zone)
                 .setLatitude(latitude)
                 .setLongitude(longitude)
@@ -478,7 +442,6 @@ public abstract class AdViewCore extends WebView {
 
     private void setupWebView() {
         WebSettings webSettings = getSettings();
-        webSettings.setSavePassword(false);
         webSettings.setSaveFormData(false);
         webSettings.setJavaScriptEnabled(true);
         webSettings.setSupportZoom(false);
@@ -489,14 +452,7 @@ public abstract class AdViewCore extends WebView {
         setVerticalScrollBarEnabled(false);
         setHorizontalScrollBarEnabled(false);
 
-        DisplayMetrics metrics = new DisplayMetrics();
-        WindowManager wm = (WindowManager) getContext().getSystemService(
-                Context.WINDOW_SERVICE);
-
-        wm.getDefaultDisplay().getMetrics(metrics);
-        mDensity = metrics.density;
-
-        setScriptPath();
+        refreshDisplayMetrics();
 
         setWebViewClient(new AdWebViewClient(context));
         setWebChromeClient(mWebChromeClient);
@@ -508,8 +464,8 @@ public abstract class AdViewCore extends WebView {
      * @return the size
      */
     public String getSize() {
-        return "{ width: " + (int) (getWidth() / mDensity) + ", " + "height: "
-                + (int) (getHeight() / mDensity) + "}";
+        return "{ width: " + pxToDip(getWidth()) + ", " + "height: "
+                + pxToDip(getHeight()) + '}';
     }
 
     @Override
@@ -522,11 +478,12 @@ public abstract class AdViewCore extends WebView {
         }
 
         if (isFirstTime){
-            adLog.log(AdLog.LOG_LEVEL_3, AdLog.LOG_TYPE_INFO, "onAttachedToWindow", "isFirstTime is true. Called LoadContentTask");
             handler.post(new Runnable() {
                 @Override
                 public void run() {
-                    update(false);
+                    if (isFirstTime) {
+                        update(false);
+                    }
                 }
             });
         }
@@ -547,7 +504,6 @@ public abstract class AdViewCore extends WebView {
         
     protected void cancelUpdating(){
         adLog.log(AdLog.LOG_LEVEL_3, AdLog.LOG_TYPE_INFO, "cancelUpdating", "cancelUpdating called");
-        loadDataWithBaseURL("about:blank","");
         removeAllViews();
         if (reloadTimer != null) {
             try {
@@ -562,6 +518,7 @@ public abstract class AdViewCore extends WebView {
         if (contentTask != null) {
             try {
                 contentTask.cancel(true);
+                contentTask = null;
             } catch (Exception e) {
                 adLog.log(AdLog.LOG_LEVEL_1, AdLog.LOG_TYPE_ERROR, "cancelUpdating",
                         e.getMessage());
@@ -574,10 +531,22 @@ public abstract class AdViewCore extends WebView {
     /**
      * Immediately update banner contents.
      */
+    @TargetApi(Build.VERSION_CODES.HONEYCOMB) // API 11
     public void update(boolean forced) {
-        contentTask = new LoadContentTask((AdView)this, forced);
-        contentTask.execute(0);
+        if (contentTask != null) {
+            // async task is currently running, don't reload...
+            return;
+        }
+        contentTask = new LoadContentTask(this, forced);
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+            contentTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, 0);
+        }
+        else {
+            contentTask.execute(0);
+        }
     }
+
+    abstract void calcDimensionsForRequest(Context ctx);
 
     private class LoadContentTask extends AsyncTask<Integer, Integer, String>{
                 
@@ -585,12 +554,12 @@ public abstract class AdViewCore extends WebView {
         private static final int END_STATE = 1;
         private static final int ERROR_STATE = 2;
 
-        private boolean forced;
-        private AdView view;
-        private String error;
-        private String requestUrl;
+        private final boolean forced;
+        private final AdViewCore view;
+        private String error = null;
+        private String requestUrl = null;
                 
-        public LoadContentTask(AdView view, boolean forced) {
+        public LoadContentTask(AdViewCore view, boolean forced) {
             this.forced = forced;
             this.view = view;
         }
@@ -637,8 +606,8 @@ public abstract class AdViewCore extends WebView {
                  * seek...
                  */
                 String data = null;
-                String videourl = null;
-                String clickurl = null;
+//                String videourl = null;
+                String clickurl;
                 // calc request size based on size of layout allotted
                 view.calcDimensionsForRequest(context);
 
@@ -646,14 +615,16 @@ public abstract class AdViewCore extends WebView {
                 autoDetectParametersThread.run();
                 autoDetectParametersThread.applyParameters(adRequest);
 
+                adRequest.initDefaultParameters(getContext());
                 final String url = adRequest.createURL();
                 requestUrl = url;
+                boolean forceMraid = false;
                 try {
                     publishProgress(BEGIN_STATE);
 
-                    Log.d("TapIt", url);
+                    TapItLog.d(TAG, "Request: " + url);
                     data = requestGet(url);
-                    Log.d("TapIt", data);
+                    TapItLog.d(TAG, "Response: " + data);
                     try {
                         JSONObject jsonObject = new JSONObject(data);
                         if(jsonObject.has("error")) {
@@ -662,18 +633,18 @@ public abstract class AdViewCore extends WebView {
                             throw new Exception(jsonObject.getString("error"));
                         }
                         else if (jsonObject.has("type")){
+                            if (jsonObject.has("mraid")) {
+                                forceMraid = jsonObject.getBoolean("mraid");
+                            }
                             typeOfBanner = jsonObject.getString("type");
                             if (TYPE_BANNER.equals(typeOfBanner)){
                                 data = (String) jsonObject.get("html");
-                            } else if (TYPE_ORMMA.equals(typeOfBanner)){
-                                data = (String) jsonObject.get("html");                                
-                            } else if (TYPE_VIDEO.equals(typeOfBanner)){
-                                videourl = jsonObject.getString("videourl");
                             } else if (TYPE_OFFERWALL.equals(typeOfBanner)){
                                 // do nothing
                             } else {// if nothing equal then assume this is BANNER
                                 typeOfBanner = TYPE_BANNER;
                                 data = (String) jsonObject.get("html");
+
                                 if("".equals(data)) {
                                     this.error = "server returned a blank ad";
                                     publishProgress(ERROR_STATE);
@@ -685,7 +656,7 @@ public abstract class AdViewCore extends WebView {
                                 mClickURL = clickurl;
                             }
 
-                                                        
+
                             if(jsonObject.has("adHeight")) {
                                 try {
                                     adHeight = Integer.parseInt(jsonObject.getString("adHeight"));
@@ -706,9 +677,12 @@ public abstract class AdViewCore extends WebView {
                             else {
                                 adWidth = -1;
                             }
+
+                            if (jsonObject.has("mraid")) {
+                                mraid = true;
+                            }
                         }
                                         
-                        publishProgress(END_STATE);
                     } catch (JSONException e) {
                         if("".equals(data)) {
                             this.error = "server returned an empty response";
@@ -719,7 +693,6 @@ public abstract class AdViewCore extends WebView {
                                     "Load JSON", e.getMessage());
                             // not json output, assume html
                             typeOfBanner = TYPE_BANNER;
-                            publishProgress(END_STATE);
                         }
                     }
                 } catch (Exception e) {
@@ -727,6 +700,7 @@ public abstract class AdViewCore extends WebView {
                             "contentThreadAction.requestGet", e.getMessage());
                     this.error = e.getMessage();
                     publishProgress(ERROR_STATE);
+                    data = null;
                 }
                 try{
                     if ((data != null) && (data.length() > 0)) {
@@ -737,60 +711,61 @@ public abstract class AdViewCore extends WebView {
                                                 
 //                        view.clearCache(true);
                 
-                        if (TYPE_BANNER.equals(typeOfBanner) || TYPE_ORMMA.equals(typeOfBanner)){
-                                                        
-                            data = wrapToHTML(data, mBridgeScriptPath, mScriptPath);
+                        if (TYPE_BANNER.equals(typeOfBanner)){
+                            mraid = forceMraid || checkIfMraid(data);
+                            data = wrapToHTML(data, mraid);
                             mContent = data;
                                                         
-                            if (isBannerAnimationEnabled && !fTime){
-                                final float centerX = getWidth() / 2.0f;
-                                final float centerY = getHeight() / 2.0f;
-                        
-                                // Create a new 3D rotation with the supplied parameter
-                                // The animation listener is used to trigger the next animation
-                                final Rotate3dAnimation rotation =
-                                        new Rotate3dAnimation(0, 90, centerX, centerY, 310.0f, true);
-                                rotation.setDuration(500);
-                                rotation.setFillAfter(true);
-                                rotation.setInterpolator(new AccelerateInterpolator());
-                                rotation.setAnimationListener(new AnimationListener() {
-                                                                        
-                                    @Override
-                                    public void onAnimationStart(Animation animation) {}
-                                                                        
-                                    @Override
-                                    public void onAnimationRepeat(Animation animation) {}
-                                                                        
-                                    @Override
-                                    public void onAnimationEnd(Animation animation) {
-                                        loadDataWithBaseURL(url, mContent);
-                                    }
-                                });
-                                handler.post(new Runnable() {
-                                                                        
-                                    @Override
-                                    public void run() {
-                                        clearAnimation();
-                                        startAnimation(rotation);
-                                        animateBack = true;
-                                    }
-                                });
-                            } else {
+//                            if (isBannerAnimationEnabled && !fTime){
+//                                final float centerX = getWidth() / 2.0f;
+//                                final float centerY = getHeight() / 2.0f;
+//
+//                                // Create a new 3D rotation with the supplied parameter
+//                                // The animation listener is used to trigger the next animation
+//                                final Rotate3dAnimation rotation =
+//                                        new Rotate3dAnimation(0, 90, centerX, centerY, 310.0f, true);
+//                                rotation.setDuration(500);
+//                                rotation.setFillAfter(true);
+//                                rotation.setInterpolator(new AccelerateInterpolator());
+//                                rotation.setAnimationListener(new AnimationListener() {
+//
+//                                    @Override
+//                                    public void onAnimationStart(Animation animation) {}
+//
+//                                    @Override
+//                                    public void onAnimationRepeat(Animation animation) {}
+//
+//                                    @Override
+//                                    public void onAnimationEnd(Animation animation) {
+////                                        loadDataWithBaseURL(url, mContent);
+//                                        loadData(mContent, "text/html", "UTF-8");
+//                                    }
+//                                });
+//                                handler.post(new Runnable() {
+//
+//                                    @Override
+//                                    public void run() {
+//                                        clearAnimation();
+//                                        startAnimation(rotation);
+//                                        animateBack = true;
+//                                    }
+//                                });
+//                            } else {
                                 retData = data;
 //                                loadDataWithBaseURL(data);
-                            }
-                        } else if (TYPE_VIDEO.equals(typeOfBanner)) {
-//                            Dimensions d = null;
-//                            d = new Dimensions();
-//                            d.x = 0; d.y = 0; d.width = 480; d.height = 480;
-//                            Log.d(TAG, videourl);
-                            boolean audioMuted = false;
-                            boolean autoPlay = false;
-                            boolean showControls = false;
-                            boolean repeat = false;
-                            playVideo(videourl, clickurl, audioMuted, autoPlay, showControls, repeat, null, "fullscreen", "exit");
+//                            }
+//                        } else if (TYPE_VIDEO.equals(typeOfBanner)) {
+////                            Dimensions d = null;
+////                            d = new Dimensions();
+////                            d.x = 0; d.y = 0; d.width = 480; d.height = 480;
+////                            TapItLog.d(TAG, videourl);
+//                            boolean audioMuted = false;
+//                            boolean autoPlay = false;
+//                            boolean showControls = false;
+//                            boolean repeat = false;
+//                            playVideo(videourl, clickurl, audioMuted, autoPlay, showControls, repeat, null, "fullscreen", "exit");
                         } else if (TYPE_OFFERWALL.equals(typeOfBanner)) {
-                            data = wrapToHTML(data, mBridgeScriptPath, mScriptPath);
+                            data = wrapToHTML(data, false);
                             mContent = data;
                             retData = data;
 //                            loadDataWithBaseURL(data);
@@ -798,10 +773,12 @@ public abstract class AdViewCore extends WebView {
                     } else {
                         interstitialClose();
                     }
+                    publishProgress(END_STATE);
                 } catch (Exception e) {
                     adLog.log(AdLog.LOG_LEVEL_1, AdLog.LOG_TYPE_ERROR, "LoadContentTask",
                         e.getMessage());
-                    Log.e("TapIt", "An error occured", e);
+                    TapItLog.e(TAG, "An error occurred", e);
+                    publishProgress(ERROR_STATE);
                 }
                 scheduleUpdate();
                                 
@@ -811,18 +788,20 @@ public abstract class AdViewCore extends WebView {
                 
         @Override
         protected void onProgressUpdate (Integer... values) {
-            int state = values[0].intValue();
+            int state = values[0];
 
             if (adDownload != null) {
                 switch(state) {
                 case BEGIN_STATE:
-                    adDownload.begin((AdViewCore)this.view);
+                    adDownload.begin(this.view);
                     break;
                 case END_STATE:
-                    adDownload.end((AdViewCore)this.view);
+                    if (!AdViewCore.this.mraid) {
+                        adDownload.end(this.view);
+                    }
                     break;
                 case ERROR_STATE:
-                    adDownload.error((AdViewCore)this.view, this.error);
+                    adDownload.error(this.view, this.error);
                     break;
                 }
             }
@@ -831,13 +810,14 @@ public abstract class AdViewCore extends WebView {
         @Override
         protected void onPostExecute(String htmlData) {
             if(htmlData != null) {
-                loadDataWithBaseURL(requestUrl, htmlData);
+                loadData(htmlData, "text/html", "UTF-8");
             }
+            contentTask = null;
         }
                 
     }
         
-    protected String wrapToHTML(String data, String bridgeScriptPath, String scriptPath){
+    protected String wrapToHTML(String data, boolean isMraid){
         String alignment;
         if(adWidth > 0) {
             alignment = "style=\"width:" + adWidth + "px; margin:0 auto; text-align:center;\"";
@@ -845,17 +825,24 @@ public abstract class AdViewCore extends WebView {
         else {
             alignment = "align=\"left\"";
         }
-                
+
+        String mraidTag = "";
+        if (isMraid) {
+            mraidTag = "<script type=\"text/javascript\">" +
+                    Mraid.MRAID_JS +
+                    "</script>";
+//          mraidTag += "<script src=\"" + mraidBridgePath + "\"></script>";
+        }
         return "<html><head>"
-            + "<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no' />"
-            + "<title>Advertisement</title> " 
-//            + "<script src=\"file:/" + bridgeScriptPath + "\" type=\"text/javascript\"></script>"
-//            + "<script src=\"file:/" + scriptPath + "\" type=\"text/javascript\"></script>"
+//            + "<meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no' />"
+            + "<meta name='viewport' content='initial-scale=1.0, maximum-scale=1.0, user-scalable=no' />"
+            + "<title>Advertisement</title> "
+            + mraidTag
             + "</head>"
             + "<body style=\"margin:0; padding:0; overflow:hidden; background-color:transparent;\">"
-            + "<div " + alignment + ">"
-            + data 
-            + "</div> "
+//            + "<div " + alignment + ">"
+            + data
+//            + "</div> "
             + "</body> "
             + "</html> ";
     }
@@ -871,7 +858,7 @@ public abstract class AdViewCore extends WebView {
         if (lastTimerTask != null)
             lastTimerTask.cancel();
         lastTimerTask = new TimerTask() {
-                        
+
             @Override
             public void run() {
                 update(false);
@@ -910,6 +897,7 @@ public abstract class AdViewCore extends WebView {
 
     private class AdWebViewClient extends WebViewClient {
         private Context context;
+        private int numPagesLoading = 0;
 
         public AdWebViewClient(Context context) {
             this.context = context;
@@ -918,6 +906,11 @@ public abstract class AdViewCore extends WebView {
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, String url) {
             try {
+                if(url.startsWith("nativecall://")) {
+                  handleNativeMraidCall(url);
+                  return true;
+                }
+
                 adLog.log(AdLog.LOG_LEVEL_2, AdLog.LOG_TYPE_INFO, "OverrideUrlLoading", url);
                 if (adClickListener != null) {
                     adLog.log(AdLog.LOG_LEVEL_2, AdLog.LOG_TYPE_INFO, "OverrideUrlLoading - click", url);
@@ -936,7 +929,7 @@ public abstract class AdViewCore extends WebView {
                     }
                 }
             } catch (Exception e) {
-                Log.d("TapIt", "An error occurred", e);
+                TapItLog.d(TAG, "An error occurred("+ url + ')', e);
                 adLog.log(AdLog.LOG_LEVEL_1, AdLog.LOG_TYPE_ERROR, "shouldOverrideUrlLoading",
                         e.getMessage());
             }
@@ -947,18 +940,28 @@ public abstract class AdViewCore extends WebView {
         @Override
         public void onPageStarted(WebView view, String url, Bitmap favicon) {
             super.onPageStarted(view, url, favicon);
-            adLog.log(AdLog.LOG_LEVEL_2, AdLog.LOG_TYPE_INFO, "onPageStarted", url);
+//            TapItLog.d(TAG, "onPageStarted: " + url);
+            numPagesLoading++;
         }
 
         @Override
         public void onPageFinished(WebView view, String url) {
+            numPagesLoading--;
+//            TapItLog.d(TAG, "onPageFinished("+ numPagesLoading +"): " + url);
+            if (numPagesLoading == 0) {
+              if(AdViewCore.this.mraid) {
+                  if (getMraidState() == Mraid.MraidState.LOADING) {
+                      setMraidState(Mraid.MraidState.DEFAULT);
+                      syncMraidState();
+                      fireMraidEvent(Mraid.MraidEvent.READY, null);
+                      fireMraidEvent(Mraid.MraidEvent.STATECHANGE, mraidState.value);
+                      if (adDownload != null) {
+                        adDownload.end(AdViewCore.this);
+                      }
+                  }
+              }
             ((AdViewCore) view).onPageFinished();
-
-            adLog.log(AdLog.LOG_LEVEL_2, AdLog.LOG_TYPE_INFO, "onPageFinished", url);
-                        
-//            if (adDownload != null) {
-//                adDownload.end();
-//            }
+            }
         }
 
         @Override
@@ -970,17 +973,32 @@ public abstract class AdViewCore extends WebView {
                     adDownload.error((AdViewCore)view, description);
                 }
             } catch (Exception e){
-                Log.e("TapIt", "An error occured", e);
+                TapItLog.e(TAG, "An error occurred", e);
             }
         }
     }
 
-    WebChromeClient mWebChromeClient = new WebChromeClient() {
+    protected WebChromeClient mWebChromeClient = new WebChromeClient() {
         @Override
         public boolean onJsAlert(WebView view, String url, String message, JsResult result) {
             result.confirm();
 //            return super.onJsAlert(view, url, message, result);
             return true;
+        }
+
+        @Override
+        public boolean onConsoleMessage(ConsoleMessage cm) {
+//            if(BuildConfig.DEBUG) {
+//                StringBuilder sb = new StringBuilder("JS>>>> ");
+//                sb.append(cm.message());
+//                sb.append(" -- From line ").append(cm.lineNumber());
+//                if (!cm.sourceId().toLowerCase().startsWith("data:")) {
+//                    sb.append(" of ").append(cm.sourceId());
+//                }
+//                TapItLog.d(TAG, sb.toString());
+//                return true;
+//            }
+            return false;
         }
     };
 
@@ -988,7 +1006,7 @@ public abstract class AdViewCore extends WebView {
                 
         if (openInInternalBrowser){
             try {
-                callPwAdActivity(url);
+                callTapItAdActivity(url);
 
             } catch (ActivityNotFoundException e) {
                 adLog.log(AdLog.LOG_LEVEL_1, AdLog.LOG_TYPE_ERROR, "openUrlInExternalBrowser",
@@ -1021,7 +1039,7 @@ public abstract class AdViewCore extends WebView {
         }
     }
 
-    private void callPwAdActivity(final String url) {
+    private void callTapItAdActivity(final String url) {
         AdActivityContentWrapper wrapper = new AdActivityContentWrapper() {
             private BasicWebView mWebView = null;
 
@@ -1086,9 +1104,10 @@ public abstract class AdViewCore extends WebView {
         return result;
     }
 
-    private static int requestCounter = 0;
+    private int requestCounter = 0;
 
     private String requestGet(String url) throws IOException {
+        //TODO check http status code for errors
         requestCounter++;
         int rcounterLocal = requestCounter;
 
@@ -1096,6 +1115,7 @@ public abstract class AdViewCore extends WebView {
                 "requestGet[" + String.valueOf(rcounterLocal) + "]", url);
 
         DefaultHttpClient client = new DefaultHttpClient();
+        client.getParams().setParameter(CoreProtocolPNames.USER_AGENT, userAgent);
         HttpGet get = new HttpGet(url);
         HttpResponse response = client.execute(get);
         HttpEntity entity = response.getEntity();
@@ -1110,7 +1130,7 @@ public abstract class AdViewCore extends WebView {
     }
 
     private static String readInputStream(BufferedInputStream in) throws IOException {
-        StringBuffer out = new StringBuffer();
+        StringBuilder out = new StringBuilder();
         byte[] buffer = new byte[8192];
         for (int n; (n = in.read(buffer)) != -1;) {
             out.append(new String(buffer, 0, n));
@@ -1142,17 +1162,192 @@ public abstract class AdViewCore extends WebView {
         return mViewState.toString().toLowerCase();
     }
 
-    public void resize(int width, int height) {
-        throw new UnsupportedOperationException("Can't resize: " + width + ", " + height);
+    private Pair<Integer, Integer> avoidClipping(int width, int height, int offsetX, int offsetY) {
+        Pair<Integer, Integer> maxSizePx = getMaxSizePx();
+        boolean dirty = false;
+        if (width <= maxSizePx.first) {
+            if (offsetX < 0) {
+                dirty = true;
+                offsetX = 0;
+            }
+            else if(width + offsetX > maxSizePx.first) {
+                dirty = true;
+                offsetX = maxSizePx.first - width;
+            }
+        }
 
-//        Message msg = mHandler.obtainMessage(MESSAGE_RESIZE);
-//
-//        Bundle data = new Bundle();
-//        data.putInt(RESIZE_WIDTH, width);
-//        data.putInt(RESIZE_HEIGHT, height);
-//        msg.setData(data);
-//
-//        mHandler.sendMessage(msg);
+        if (height <= maxSizePx.second) {
+            if (offsetY < 0) {
+                dirty = true;
+                offsetY = 0;
+            }
+            else if (height + offsetY > maxSizePx.second) {
+                dirty = true;
+                offsetY = maxSizePx.second - height;
+            }
+        }
+        if (dirty) {
+            return new Pair<Integer, Integer>(offsetX, offsetY);
+        }
+        else {
+            return null;
+        }
+    }
+
+    protected void refreshDisplayMetrics() {
+        WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+        wm.getDefaultDisplay().getMetrics(metrics);
+    }
+    /**
+     *
+     * @param widthDip widthDip of creative in pixels
+     * @param heightDip heightDip of creative in pixels
+     * @param offsetXDip the horizontal delta from the banner's upper left-hand corner
+     *                where the upper left-hand corner of the expanded region should be placed; positive
+     *                integers for expand right; negative for left
+     * @param offsetYDip the vertical delta from the banner's upper left-hand corner where
+     *                the upper left-hand corner of the expanded region should be placed; positive integers
+     *                for expand down; negative for up
+     * @param customClosePosition
+     * @param allowOffscreen tells the container whether or not it should allow the resized creative to be
+     *                       drawn fully/partially offscreen (clip).
+     *                       true - don't attempt to keep the ad visible on screen.
+     *                       false - reposition the ad to fit within the maxSize area
+     * @return true if resize will occur, false if resize was canceled because it would push the ad
+     * or close button offscreen
+     */
+    public boolean resize(int widthDip, int heightDip, int offsetXDip, int offsetYDip,
+                       Mraid.MraidCloseRegionPosition customClosePosition, boolean allowOffscreen) {
+        WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+        DisplayMetrics metrics = new DisplayMetrics();
+        wm.getDefaultDisplay().getMetrics(metrics);
+
+        FrameLayout rootView = (FrameLayout)getRootView().findViewById(android.R.id.content);
+        Pair<Integer, Integer> offsetsPx = getOffsetRelativeToView(rootView);
+
+        int leftPx = offsetsPx.first;
+        int topPx = offsetsPx.second;
+
+        int widthPx = dipToPx(widthDip);
+        int heightPx = dipToPx(heightDip);
+
+        TapItLog.e(TAG, "pre-resize:" + leftPx + ", " + topPx);
+
+        leftPx += dipToPx(offsetXDip);
+        topPx += dipToPx(offsetYDip);
+
+        if (!allowOffscreen) {
+            Pair<Integer, Integer> shiftedOffsets = avoidClipping(widthPx, heightPx, leftPx, topPx);
+            if (shiftedOffsets != null) {
+                leftPx = shiftedOffsets.first;
+                topPx = shiftedOffsets.second;
+            }
+        }
+
+        //TODO fail if close region is clipped
+//        if (closeRegionClipped) {
+//            return false;
+//        }
+
+        if (placeholderView == null) {
+            // pull the ad out of the view hierarchy and put it on top of the stack
+            placeholderView = new FrameLayout(this.getContext());
+            placeholderView.setBackgroundColor(Color.RED);
+            placeholderView.setVisibility(View.INVISIBLE);
+            swapViews(this, placeholderView);
+        }
+
+        rootView.bringToFront();
+        ViewGroup parent = (ViewGroup)getParent();
+        if (parent != null) {
+            parent.removeView(this);
+        }
+        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(widthPx, heightPx);
+//        params.gravity = Gravity.CENTER; // this causes taps to be misaligned for some reason...
+        params.leftMargin = leftPx;
+        params.topMargin = topPx;
+        rootView.addView(this, params);
+
+        OnAdDownload clickListener = getOnAdDownload();
+        if(clickListener != null) {
+            clickListener.willPresentFullScreen(this);
+            clickListener.didPresentFullScreen(this);
+        }
+        cancelUpdating();
+
+        TapItLog.e(TAG, "post-resize:" + leftPx + ", " + topPx);
+
+        return true;
+    }
+
+    public void mraidClose() {
+        if (placeholderView != null) {
+            swapViews(placeholderView, this);
+            placeholderView = null;
+        }
+
+        post(new Runnable() {
+            @Override
+            public void run() {
+                if (Mraid.MraidState.DEFAULT == getMraidState()) {
+                    setMraidState(Mraid.MraidState.HIDDEN);
+                    setVisibility(View.GONE);
+                    fireMraidEvent(Mraid.MraidEvent.VIEWABLECHANGE, "false");
+                }
+                else {
+                    OnAdDownload clickListener = getOnAdDownload();
+                    if(clickListener != null) {
+                        if (Mraid.MraidState.RESIZED == getMraidState()) {
+                            clickListener.didResize(AdViewCore.this);
+                        }
+                        else {
+                            clickListener.willDismissFullScreen(AdViewCore.this);
+                        }
+                    }
+                    setMraidState(Mraid.MraidState.DEFAULT);
+                }
+
+                fireMraidEvent(Mraid.MraidEvent.STATECHANGE, mraidState.value);
+                syncMraidState();
+            }
+        });
+
+//        scheduleUpdate();
+    }
+
+    /**
+     * Pulls viewInLayout out of the view hierarchy, placing altView in it's place.
+     * @param viewInLayout the view that's currently in the hierarchy.
+     * View will be left w/o a parent.
+     * @param altView the view that will replace viewInLayout's position in hierarchy.
+     * This view will assume all layout params of viewInLayout
+     */
+    private static void swapViews(ViewGroup viewInLayout, ViewGroup altView) {
+        ViewGroup parent = (ViewGroup) viewInLayout.getParent();
+        if (parent == null) {
+            TapItLog.w(TAG, "Failed to swapViews because viewInLayout has no parent");
+            return;
+        }
+
+        int index;
+        int count = parent.getChildCount();
+        for (index = 0; index < count; index++) {
+            if (parent.getChildAt(index).equals(viewInLayout)) {
+                break;
+            }
+        }
+
+        parent.removeView(viewInLayout);
+        ViewGroup.LayoutParams lp = viewInLayout.getLayoutParams();
+//        ViewGroup.LayoutParams lp = new ViewGroup.LayoutParams(
+//                viewInLayout.getWidth(),
+//                viewInLayout.getHeight()
+//        );
+        ViewGroup altParent = (ViewGroup)altView.getParent();
+        if(altParent != null) {
+            altParent.removeView(altView);
+        }
+        parent.addView(altView, index, lp);
     }
 
     /**
@@ -1203,6 +1398,24 @@ public abstract class AdViewCore extends WebView {
 //        msg.setData(data);
 //
 //        mHandler.sendMessage(msg);
+    }
+
+    public void useCustomCloseButton(boolean useCustomClose) {
+        //TODO clean this logic up...
+        Object parent = getParent();
+        if (parent instanceof TapItAdActivity) {
+            ((TapItAdActivity)parent).setCloseButtonVisible(!useCustomClose);
+        }
+        else if (parent instanceof InterstitialBaseView) {
+            ((InterstitialBaseView)parent).setCloseButtonVisible(!useCustomClose);
+        }
+        else {
+            // ad not expanded yet..
+        }
+    }
+
+    public void open(String url) {
+        open(url, true, true, true);
     }
         
     /**
@@ -1272,7 +1485,7 @@ public abstract class AdViewCore extends WebView {
 //                getContext().startActivity(intent);
 //            }
 //            catch(ActivityNotFoundException e){
-//                Log.e("TapIt", "An error occured", e);
+//                TapItLog.e(TAG, "An error occured", e);
 //            }
 //        } else if(d != null){
 //            msg.setData(data);
@@ -1293,11 +1506,9 @@ public abstract class AdViewCore extends WebView {
                 if ((url != null) && (url.length() > 0)) {
                     super.loadUrl(url);
                 }
-                return;
             } catch (Exception e) {
-                Log.e("TapIt", "An error occured", e);
+                TapItLog.e(TAG, "An error occurred", e);
                 adLog.log(AdLog.LOG_LEVEL_1, AdLog.LOG_TYPE_ERROR, "loadUrl", e.getMessage());
-                return;
             }
         } else {
             if ((mContent != null) && (mContent.length() > 0)) {
@@ -1311,46 +1522,28 @@ public abstract class AdViewCore extends WebView {
         if (mDataToInject != null){
             injectJavaScript(mDataToInject);
         }
-
-//        injectJavaScript("Ormma.ready();");
-
-
-//        mDefaultHeight = (int) (getHeight() / mDensity);
-//        mDefaultWidth = (int) (getWidth() / mDensity);
-
-//        setVisibility(View.VISIBLE);
-        if (animateBack){
-
-            final float centerX = getWidth() / 2.0f;
-            final float centerY = getHeight() / 2.0f;
-
-            // Create a new 3D rotation with the supplied parameter
-            // The animation listener is used to trigger the next animation
-            final Rotate3dAnimation rotation =
-                    new Rotate3dAnimation(-90, 0, centerX, centerY, 310.0f, false);
-            rotation.setDuration(500);
-            rotation.setFillAfter(true);
-            rotation.setInterpolator(new DecelerateInterpolator());
-
-            handler.post(new Runnable() {
-
-                @Override
-                public void run() {
-                    startAnimation(rotation);
-                    animateBack = false;
-                }
-            });
-        } else {
-
-        }
-    }
-
-    /**
-     * Sets the script path.
-     */
-    private synchronized void setScriptPath() {
-        mScriptPath = "//android_asset/ormma.js";
-        mBridgeScriptPath = "//android_asset/ormma_bridge.js";
+//        if (animateBack){
+//
+//            final float centerX = getWidth() / 2.0f;
+//            final float centerY = getHeight() / 2.0f;
+//
+//            // Create a new 3D rotation with the supplied parameter
+//            // The animation listener is used to trigger the next animation
+//            final Rotate3dAnimation rotation =
+//                    new Rotate3dAnimation(-90, 0, centerX, centerY, 310.0f, false);
+//            rotation.setDuration(500);
+//            rotation.setFillAfter(true);
+//            rotation.setInterpolator(new DecelerateInterpolator());
+//
+//            handler.post(new Runnable() {
+//
+//                @Override
+//                public void run() {
+//                    startAnimation(rotation);
+//                    animateBack = false;
+//                }
+//            });
+//        }
     }
 
 
@@ -1360,8 +1553,6 @@ public abstract class AdViewCore extends WebView {
 
     /**
      * Required. Set the id of the zone of publisher site.
-     * 
-     * @param zone
      */
     public void setZone(String zone) {
         if (adRequest != null) {
@@ -1382,8 +1573,6 @@ public abstract class AdViewCore extends WebView {
 
     /**
      * Optional. Set the adtype of the advertise.
-     * 
-     * @param adtype
      */
     public void setAdtype(String adtype) {
         if (adRequest != null) {
@@ -1405,9 +1594,8 @@ public abstract class AdViewCore extends WebView {
     /**
      * @deprecated
      * Optional. Set minimum width of advertising.
-     * 
-     * @param minSizeX
      */
+    @Deprecated
     public void setMinSizeX(Integer minSizeX) {
         if ((adRequest != null)) {
             adRequest.setMinSizeX(minSizeX);
@@ -1418,6 +1606,7 @@ public abstract class AdViewCore extends WebView {
      * @deprecated
      * Optional. Get minimum width of advertising.
      */
+    @Deprecated
     public Integer getMinSizeX() {
         if (adRequest != null) {
             return adRequest.getMinSizeX();
@@ -1429,9 +1618,8 @@ public abstract class AdViewCore extends WebView {
     /**
      * @deprecated
      * Optional. Set minimum height of advertising.
-     * 
-     * @param minSizeY
      */
+    @Deprecated
     public void setMinSizeY(Integer minSizeY) {
         if ((adRequest != null)) {
             adRequest.setMinSizeY(minSizeY);
@@ -1442,6 +1630,7 @@ public abstract class AdViewCore extends WebView {
      * @deprecated
      * Optional. Get minimum height of advertising.
      */
+    @Deprecated
     public Integer getMinSizeY() {
         if (adRequest != null) {
             return adRequest.getMinSizeY();
@@ -1453,9 +1642,8 @@ public abstract class AdViewCore extends WebView {
     /**
      * @deprecated
      * Optional. Set maximum width of advertising.
-     * 
-     * @param maxSizeX
      */
+    @Deprecated
     public void setMaxSizeX(Integer maxSizeX) {
         if ((adRequest != null)) {
             adRequest.setSizeX(maxSizeX);
@@ -1466,6 +1654,7 @@ public abstract class AdViewCore extends WebView {
      * @deprecated
      * Optional. Get maximum width of advertising.
      */
+    @Deprecated
     public Integer getMaxSizeX() {
         if (adRequest != null) {
             return adRequest.getSizeX();
@@ -1477,9 +1666,8 @@ public abstract class AdViewCore extends WebView {
     /**
      * @deprecated
      * Optional. Set maximum height of advertising.
-     * 
-     * @param maxSizeY
      */
+    @Deprecated
     public void setMaxSizeY(Integer maxSizeY) {
         if ((adRequest != null)) {
             adRequest.setSizeY(maxSizeY);
@@ -1490,6 +1678,7 @@ public abstract class AdViewCore extends WebView {
      * @deprecated
      * Optional. Get maximum height of advertising.
      */
+    @Deprecated
     public Integer getMaxSizeY() {
         if (adRequest != null) {
             return adRequest.getSizeY();
@@ -1500,12 +1689,10 @@ public abstract class AdViewCore extends WebView {
 
     /**
      * Optional. Set Background color of advertising in HEX.
-     * 
-     * @param backgroundColor
      */
     public void setBackgroundColor(String backgroundColor) {
         try {
-            int iColor = Integer.decode("#" + backgroundColor);
+            int iColor = Integer.decode('#' + backgroundColor);
             setBackgroundColor(iColor);
         } catch(NumberFormatException e) {
             adLog.log(AdLog.LOG_LEVEL_1, AdLog.LOG_TYPE_ERROR, "AdViewCore.setBackgroundColor", e.getMessage());
@@ -1542,8 +1729,6 @@ public abstract class AdViewCore extends WebView {
 
     /**
      * Optional. Set Text color of links in HEX.
-     * 
-     * @param textColor
      */
     public void setTextColor(String textColor) {
         if (adRequest != null) {
@@ -1564,8 +1749,6 @@ public abstract class AdViewCore extends WebView {
 
     /**
      * Optional. Overrides the URL of ad server.
-     * 
-     * @param adserverURL
      */
     public void setAdserverURL(String adserverURL) {
         if (adRequest != null) {
@@ -1587,8 +1770,6 @@ public abstract class AdViewCore extends WebView {
     /**
      * Optional. Set user location latitude value (given in degrees.decimal
      * degrees).
-     * 
-     * @param latitude
      */
     public void setLatitude(String latitude) {
         if ((adRequest != null) && (latitude != null)) {
@@ -1617,8 +1798,6 @@ public abstract class AdViewCore extends WebView {
     /**
      * Optional. Set user location longtitude value (given in degrees.decimal
      * degrees).
-     * 
-     * @param longitude
      */
     public void setLongitude(String longitude) {
         if ((adRequest != null) && (longitude != null)) {
@@ -1654,22 +1833,19 @@ public abstract class AdViewCore extends WebView {
      * AdLog.LOG_LEVEL_1     only errors<br>
      * AdLog.LOG_LEVEL_2     +warning<br>
      * AdLog.LOG_LEVEL_3     +server traffic<br>
-     *
-     * @param logLevel
      */
     public void setLogLevel(int logLevel) {
         adLog.setLogLevel(logLevel);
     }
-        
+
     /**
      * Whether to open pages in internal browser or in system browser.
      * Defaul values is true.
-     * @param b
      */
     public void setOpenInInternalBrowser(boolean b){
         openInInternalBrowser = b;
     }
-        
+
     public void raiseError(String strMsg, String action){
         throw new UnsupportedOperationException("Can't raise error: " + strMsg + "; " + action);
 //        Message msg = mHandler.obtainMessage(MESSAGE_RAISE_ERROR);
@@ -1733,18 +1909,268 @@ public abstract class AdViewCore extends WebView {
     }
 
     // Stub to quell errors relating to stripping out ORMMA
-    protected class Dimensions {
-                
+    static class Dimensions {
+
     }
-        
+
     // Stub to quell errors relating to stripping out ORMMA
-    protected class Properties {
-                
+    static class Properties {
+
+    }
+
+    /////////////////
+    // MRAID Code //
+    ////////////////
+
+
+  public Mraid.MraidState getMraidState() {
+    return mraidState;
+  }
+
+  public void setMraidState(Mraid.MraidState mraidState) {
+    this.mraidState = mraidState;
+  }
+
+  /**
+   * Test if html an mraid ad
+   * @param html the html string to test
+   * @return true if mraid, false otherwise
+   */
+    protected boolean checkIfMraid(String html) {
+      return html.toLowerCase().contains("mraid.js");
+    }
+
+  /**
+   * router code to parse and direct native calls to the appropriate
+   * mraid command handler
+   * @param urlStr the request in REST format
+   */
+    protected void handleNativeMraidCall(String urlStr) {
+      TapItLog.d(TAG, "handleNativeMraidCall(" + urlStr + ")");
+      MraidCommand.routeRequest(urlStr, this);
+    }
+
+    private int commandCounter = 0; //TODO remove debugging code
+  /**
+   * Mechanism to send data back to the js mraid bridge.
+   * @param data the data to send
+   * @param callbackToken the token used to mark data as a response to a js request,
+   *                      or null for unsolicited data (e.g. one way comms)
+   */
+    protected void mraidResponse(Map<String, ?> data, String callbackToken) {
+      StringBuilder sb = new StringBuilder("{");
+      if (data != null) {
+//        TapItLog.d(TAG, "DATA: " + data);
+        boolean isFirst = true;
+        for (Map.Entry<String, ?> entry : data.entrySet()) {
+          if(isFirst) {
+            isFirst = false;
+          }
+          else {
+            sb.append(',');
+          }
+          sb.append(entry.getKey());
+          sb.append(':');
+
+          Object v = entry.getValue();
+          if(v instanceof String) {
+            String vStr = (String)v;
+            if(!vStr.startsWith("{") && !vStr.startsWith("[")) {
+              vStr = String.format("\"%s\"", v);
+            }
+            sb.append(vStr);
+          }
+          else if (v == null) {
+            sb.append("null");
+          }
+          else {
+            sb.append(v);
+          }
+        }
+      }
+      sb.append('}');
+      String dataStr = sb.toString();
+
+      commandCounter++;
+      String jsStr;
+      if (callbackToken != null) {
+          //TODO remove debugging code!
+        jsStr = String.format("mraid._nativeResponse(%s, \"%s\");console.debug(%d + ': command success!');", dataStr, callbackToken, commandCounter);
+      }
+      else {
+          //TODO remove debugging code!
+        jsStr = String.format("mraid._nativeResponse(%s);console.debug(%d + ': command success!');", dataStr, commandCounter);
+      }
+
+      TapItLog.d(TAG, "mraidResponse: " + jsStr);
+      injectJavaScript(jsStr);
+    }
+
+    protected void fireMraidEvent(Mraid.MraidEvent mraidEvent, String dataString) {
+      if(dataString != null && !dataString.startsWith("[")) {
+        dataString = String.format("[\"%s\"]", dataString);
+      }
+
+      String eventStr;
+      if(dataString != null) {
+        eventStr = String.format("{name:\"%s\", props:%s}", mraidEvent.value, dataString);
+      }
+      else {
+        eventStr = String.format("{name:\"%s\"}", mraidEvent.value);
+      }
+
+      Map<String, String> data = new HashMap<String, String>();
+      data.put("_fire_event_", eventStr);
+      mraidResponse(data, null);
+    }
+
+    /**
+     * get this view's coordinates relative to some other view
+     * @param relativeView
+     * @return
+     */
+    private Pair<Integer, Integer> getOffsetRelativeToView(View relativeView) {
+        int[] relOffset = new int[2];
+//        relativeView.getLocationInWindow(relOffset);
+        relativeView.getLocationOnScreen(relOffset);
+        int[] thisOffset = new int[2];
+//        getLocationInWindow(thisOffset);
+        getLocationOnScreen(thisOffset);
+        thisOffset[0] -= relOffset[0];
+        thisOffset[1] -= relOffset[1];
+        return new Pair<Integer, Integer>(thisOffset[0], thisOffset[1]);
+    }
+
+    /**
+     * gets the maximum size that this view could expand to (e.g. fill the screen minus all the system chrome)
+     * @return a Pair containing width & height (in pixels), or null if the view root isn't available to inspect yet.
+     */
+    private Pair<Integer, Integer> getMaxSizePx() {
+        View contentView = getRootView().findViewById(android.R.id.content);
+        if (contentView != null) {
+            return new Pair<Integer, Integer>(contentView.getWidth(), contentView.getHeight());
+        }
+        else {
+            return null;
+        }
+    }
+
+    int pxToDip(int px) {
+        float tmp = px / metrics.density;
+        // handle negative coordinates
+        if (tmp < 0) {
+            tmp -= 0.5;
+        }
+        else {
+            tmp += 0.5;
+        }
+
+        return (int)tmp;
+    }
+
+    private int dipToPx(int dip) {
+        float tmp = dip * metrics.density;
+        // handle negative coordinates
+        if (tmp < 0) {
+            tmp -= 0.5;
+        }
+        else {
+            tmp += 0.5;
+        }
+
+        return (int)tmp;
+    }
+
+    protected void syncMraidState() {
+        refreshDisplayMetrics();
+
+        int screenWidthDips = pxToDip(metrics.widthPixels);
+        int screenHeightDips = pxToDip(metrics.heightPixels);
+
+        HashMap<String, Object> params = new HashMap<String, Object>();
+        params.put("state", mraidState.value);
+        params.put("isVisible", getVisibility() == View.VISIBLE);
+
+        // screen size returned by mraid.getScreenSize
+        params.put("screenWidth", screenWidthDips);
+        params.put("screenHeight", screenHeightDips);
+
+//        ViewGroup.LayoutParams lp = getLayoutParams();
+//        params.put("width", pxToDip(lp.width));
+//        params.put("height", pxToDip(lp.height));
+        params.put("width", pxToDip(getWidth()));
+        params.put("height", pxToDip(getHeight()));
+
+        params.put("placementType", getMraidPlacementType().toString());
+
+//        View contentView = ((Activity)getContext()).getWindow().findViewById(Window.ID_ANDROID_CONTENT);
+        View contentView = getRootView().findViewById(android.R.id.content);
+        if (contentView != null) {
+            // position of top left corner of ad, relative to activity content view
+            Pair<Integer, Integer> offset = getOffsetRelativeToView(contentView);
+            params.put("x", pxToDip(offset.first));
+            params.put("y", pxToDip(offset.second));
+        }
+
+        Pair<Integer, Integer> maxSize = getMaxSizePx();
+        if (maxSize != null) {
+            int maxWidthPx = maxSize.first;
+            int maxHeightPx = maxSize.second;
+
+            // max usable ad space, used by mraid.getMaxSize
+            params.put("maxWidth", pxToDip(maxWidthPx));
+            params.put("maxHeight", pxToDip(maxHeightPx));
+        }
+
+        if (!isMraidInitialized) {
+            // send over supported features
+            setMraidCapabilities(params);
+            isMraidInitialized = true;
+        }
+
+        mraidResponse(params, null);
+    }
+
+    private void setMraidCapabilities(Map<String, Object> params) {
+        StringBuilder sb = new StringBuilder(30).append('[');
+
+        if (DeviceCapabilities.canMakePhonecalls(getContext())) {
+            sb.append("\"tel\", \"sms\"");
+        }
+
+        if (DeviceCapabilities.canCreateCalendarEvents(getContext())) {
+            if (sb.length() > 1) {
+                sb.append(',');
+            }
+
+            sb.append("\"calendar\"");
+        }
+
+        //TODO implement storePicture capability test
+//        if (true) { // <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+//            if (sb.length() > 1) {
+//                sb.append(',');
+//            }
+//
+//            sb.append("\"storePicture\"");
+//        }
+
+        if (this.isHardwareAccelerated()) {
+            if (sb.length() > 1) {
+                sb.append(',');
+            }
+
+            sb.append("\"inlineVideo\"");
+        }
+
+        sb.append(']');
+
+        params.put("supportedFeatures", sb.toString());
     }
 
     protected void initAutoDetectParametersThread() {
         if ((autoDetectParametersThread != null)
-                && (autoDetectParametersThread.getState().equals(Thread.State.NEW))) {
+                && (autoDetectParametersThread.getState() == Thread.State.NEW)) {
             autoDetectParametersThread.start();
         }
     }
@@ -1754,8 +2180,33 @@ public abstract class AdViewCore extends WebView {
             try {
                 autoDetectParametersThread.interrupt();
             } catch (Exception e) {
+                TapItLog.e(TAG, "an error occurred", e);
             }
         }
+    }
+
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        refreshDisplayMetrics();
+        int width = getAdWidth();
+        int height = getAdHeight();
+        if (width > 0 && height > 0 && !mraid) {
+            // force view size to match w/h values passed down from server
+            // mraid ads should try to expand to entire screen, don't use
+            // server values...
+            setMeasuredDimension(dipToPx(width), dipToPx(height));
+        }
+        else {
+            super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+        }
+    }
+
+    TapItAdActivity getMraidExpandedActivity() {
+        return mraidExpandedActivity;
+    }
+
+    void setMraidExpandedActivity(TapItAdActivity mraidExpandedActivity) {
+        this.mraidExpandedActivity = mraidExpandedActivity;
     }
 
     private class AutoDetectParametersThread extends Thread {
@@ -1777,11 +2228,9 @@ public abstract class AdViewCore extends WebView {
 
             AutoDetectedParametersSet autoDetectedParametersSet = AutoDetectedParametersSet.getInstance();
 
-            if(request.getUa() == null) {
-                request.setUa(autoDetectedParametersSet.getUa());
-            }
-
-            if (request.getLatitude() == null || request.getLongitude() == null) {
+            if (adRequest.isAutomaticLocationTrackingEnabled() &&
+                    (request.getLatitude() == null || request.getLongitude() == null)) {
+                TapItLog.d(TAG, "setting request coordinates");
                 request.setLatitude(autoDetectedParametersSet.getLatitude());
                 request.setLongitude(autoDetectedParametersSet.getLongitude());
             }
@@ -1790,131 +2239,110 @@ public abstract class AdViewCore extends WebView {
 
         @Override
         public void run() {
-//            if (adRequest != null) {
-                AutoDetectedParametersSet autoDetectedParametersSet = AutoDetectedParametersSet
-                        .getInstance();
+            AutoDetectedParametersSet autoDetectedParametersSet = AutoDetectedParametersSet
+                    .getInstance();
 
-//                if (adRequest.getUa() == null) {
-                    if (autoDetectedParametersSet.getUa() == null) {
-                        if ((userAgent != null) && (userAgent.length() > 0)) {
-//                            adRequest.setUa(userAgent);
-                            autoDetectedParametersSet.setUa(userAgent);
-                        }
-                    }
-//                    else {
-//                        adRequest.setUa(autoDetectedParametersSet.getUa());
-//                    }
-//                }
+            if (autoDetectedParametersSet.getUa() == null) {
+                if ((userAgent != null) && (userAgent.length() > 0)) {
+                    autoDetectedParametersSet.setUa(userAgent);
+                }
+            }
 
-//                if ((adRequest.getLatitude() == null) || (adRequest.getLongitude() == null)) {
-                    if ((autoDetectedParametersSet.getLatitude() == null)
-                            || (autoDetectedParametersSet.getLongitude() == null)) {
-                        int isAccessFineLocation = context
-                                .checkCallingOrSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION);
+            if (adRequest.isAutomaticLocationTrackingEnabled()) {
+                TapItLog.d(TAG, "Automatic location tracking enabled");
+                if ((autoDetectedParametersSet.getLatitude() == null)
+                        || (autoDetectedParametersSet.getLongitude() == null)) {
+                    int isAccessFineLocation = context
+                            .checkCallingOrSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION);
 
-                        boolean checkNetworkProdier = false;
-                        locationManager = (LocationManager) context
-                                .getSystemService(Context.LOCATION_SERVICE);
-                        if (isAccessFineLocation == PackageManager.PERMISSION_GRANTED) {
-                            boolean isGpsEnabled = locationManager
-                                    .isProviderEnabled(LocationManager.GPS_PROVIDER);
+                    boolean checkNetworkProdier = false;
+                    locationManager = (LocationManager) context
+                            .getSystemService(Context.LOCATION_SERVICE);
+                    if (isAccessFineLocation == PackageManager.PERMISSION_GRANTED) {
+                        boolean isGpsEnabled = locationManager
+                                .isProviderEnabled(LocationManager.GPS_PROVIDER);
 
-                            if (isGpsEnabled) {
-                                listener = new AdView.WhereamiLocationListener(locationManager,
-                                        autoDetectedParametersSet);
-                                locationManager.requestLocationUpdates(
-                                        LocationManager.GPS_PROVIDER, 0, 0, listener,
-                                        Looper.getMainLooper());
-                            } else {
-                                checkNetworkProdier = true;
-                                adLog.log(AdLog.LOG_LEVEL_2, AdLog.LOG_TYPE_WARNING,
-                                        "AutoDetectedParametersSet.Gps", "not avalable");
-                            }
+                        if (isGpsEnabled) {
+                            listener = new WhereamiLocationListener(locationManager,
+                                    autoDetectedParametersSet);
+                            locationManager.requestLocationUpdates(
+                                    LocationManager.GPS_PROVIDER, 0, 0, listener,
+                                    Looper.getMainLooper());
                         } else {
                             checkNetworkProdier = true;
                             adLog.log(AdLog.LOG_LEVEL_2, AdLog.LOG_TYPE_WARNING,
-                                    "AutoDetectedParametersSet.Gps",
-                                    "no permission ACCESS_FINE_LOCATION");
+                                    "AutoDetectedParametersSet.Gps", "not avalable");
                         }
+                    } else {
+                        checkNetworkProdier = true;
+                        adLog.log(AdLog.LOG_LEVEL_2, AdLog.LOG_TYPE_WARNING,
+                                "AutoDetectedParametersSet.Gps",
+                                "no permission ACCESS_FINE_LOCATION");
+                    }
 
-                        if (checkNetworkProdier) {
-                            int isAccessCoarseLocation = context
-                                    .checkCallingOrSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION);
+                    if (checkNetworkProdier) {
+                        int isAccessCoarseLocation = context
+                                .checkCallingOrSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION);
 
-                            if (isAccessCoarseLocation == PackageManager.PERMISSION_GRANTED) {
-                                boolean isNetworkEnabled = locationManager
-                                        .isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+                        if (isAccessCoarseLocation == PackageManager.PERMISSION_GRANTED) {
+                            boolean isNetworkEnabled = locationManager
+                                    .isProviderEnabled(LocationManager.NETWORK_PROVIDER);
 
-                                if (isNetworkEnabled) {
-                                    listener = new AdView.WhereamiLocationListener(locationManager,
-                                            autoDetectedParametersSet);
-                                    locationManager.requestLocationUpdates(
-                                            LocationManager.NETWORK_PROVIDER, 0, 0, listener,
-                                            Looper.getMainLooper());
-                                } else {
-                                    adLog.log(AdLog.LOG_LEVEL_2, AdLog.LOG_TYPE_WARNING,
-                                            "AutoDetectedParametersSet.Network", "not avalable");
-                                }
+                            if (isNetworkEnabled) {
+                                listener = new WhereamiLocationListener(locationManager,
+                                        autoDetectedParametersSet);
+                                locationManager.requestLocationUpdates(
+                                        LocationManager.NETWORK_PROVIDER, 0, 0, listener,
+                                        Looper.getMainLooper());
                             } else {
                                 adLog.log(AdLog.LOG_LEVEL_2, AdLog.LOG_TYPE_WARNING,
-                                        "AutoDetectedParametersSet.Network",
-                                        "no permission ACCESS_COARSE_LOCATION");
+                                        "AutoDetectedParametersSet.Network", "not avalable");
+                            }
+                        } else {
+                            adLog.log(AdLog.LOG_LEVEL_2, AdLog.LOG_TYPE_WARNING,
+                                    "AutoDetectedParametersSet.Network",
+                                    "no permission ACCESS_COARSE_LOCATION");
+                        }
+                    }
+                }
+            } // isAutomaticLocationTrackingEnabled
+
+            if (autoDetectedParametersSet.getConnectionSpeed() == null) {
+                try {
+                    Integer connectionSpeed = null;
+                    ConnectivityManager connectivityManager = (ConnectivityManager) context
+                            .getSystemService(Context.CONNECTIVITY_SERVICE);
+                    NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
+
+                    if (networkInfo != null) {
+                        int type = networkInfo.getType();
+                        int subtype = networkInfo.getSubtype();
+
+                        // 0 - low (gprs, edge), 1 - fast (3g, wifi)
+                        if (type == ConnectivityManager.TYPE_WIFI) {
+                            connectionSpeed = 1;
+                        } else if (type == ConnectivityManager.TYPE_MOBILE) {
+                            if (subtype == TelephonyManager.NETWORK_TYPE_EDGE) {
+                                connectionSpeed = 0;
+                            } else if (subtype == TelephonyManager.NETWORK_TYPE_GPRS) {
+                                connectionSpeed = 0;
+                            } else if (subtype == TelephonyManager.NETWORK_TYPE_UMTS) {
+                                connectionSpeed = 1;
                             }
                         }
                     }
-//                    else {
-//                        adRequest.setLatitude(autoDetectedParametersSet.getLatitude());
-//                        adRequest.setLongitude(autoDetectedParametersSet.getLongitude());
-//                        adLog.log(AdLog.LOG_LEVEL_2, AdLog.LOG_TYPE_WARNING,
-//                                "AutoDetectedParametersSet.Gps/Network=", "("
-//                                        + autoDetectedParametersSet.getLatitude() + ";"
-//                                        + autoDetectedParametersSet.getLongitude() + ")");
-//                    }
-//                }
 
-//                if (adRequest.getConnectionSpeed() == null) {
-                    if (autoDetectedParametersSet.getConnectionSpeed() == null) {
-                        try {
-                            Integer connectionSpeed = null;
-                            ConnectivityManager connectivityManager = (ConnectivityManager) context
-                                    .getSystemService(Context.CONNECTIVITY_SERVICE);
-                            NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
-
-                            if (networkInfo != null) {
-                                int type = networkInfo.getType();
-                                int subtype = networkInfo.getSubtype();
-
-                                // 0 - low (gprs, edge), 1 - fast (3g, wifi)
-                                if (type == ConnectivityManager.TYPE_WIFI) {
-                                    connectionSpeed = 1;
-                                } else if (type == ConnectivityManager.TYPE_MOBILE) {
-                                    if (subtype == TelephonyManager.NETWORK_TYPE_EDGE) {
-                                        connectionSpeed = 0;
-                                    } else if (subtype == TelephonyManager.NETWORK_TYPE_GPRS) {
-                                        connectionSpeed = 0;
-                                    } else if (subtype == TelephonyManager.NETWORK_TYPE_UMTS) {
-                                        connectionSpeed = 1;
-                                    }
-                                }
-                            }
-
-                            if (connectionSpeed != null) {
-//                                adRequest.setConnectionSpeed(connectionSpeed);
-                                autoDetectedParametersSet.setConnectionSpeed(connectionSpeed);
-                            }
-                        } catch (Exception e) {
-                        }
+                    if (connectionSpeed != null) {
+                        autoDetectedParametersSet.setConnectionSpeed(connectionSpeed);
                     }
-//                    else {
-//                        adRequest
-//                                .setConnectionSpeed(autoDetectedParametersSet.getConnectionSpeed());
-//                    }
-//                }
-//            }
+                } catch (Exception e) {
+                    TapItLog.e(TAG, "an error occurred", e);
+                }
+            }
         }
     }
 
-    protected class WhereamiLocationListener implements LocationListener {
+    private class WhereamiLocationListener implements LocationListener {
         private LocationManager locationManager;
         private AutoDetectedParametersSet autoDetectedParametersSet;
 
@@ -1936,8 +2364,8 @@ public abstract class AdViewCore extends WebView {
                 autoDetectedParametersSet.setLatitude(Double.toString(latitude));
                 autoDetectedParametersSet.setLongitude(Double.toString(longitude));
                 adLog.log(AdLog.LOG_LEVEL_3, AdLog.LOG_TYPE_INFO, "LocationChanged=",
-                        "(" + autoDetectedParametersSet.getLatitude() + ";"
-                                + autoDetectedParametersSet.getLongitude() + ")");
+                        '(' + autoDetectedParametersSet.getLatitude() + ';'
+                                + autoDetectedParametersSet.getLongitude() + ')');
 
             } catch (Exception e) {
                 adLog.log(AdLog.LOG_LEVEL_2, AdLog.LOG_TYPE_ERROR, "LocationChanged",

@@ -6,18 +6,19 @@ import android.graphics.drawable.Drawable;
 import android.graphics.drawable.StateListDrawable;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
-import android.widget.RelativeLayout;
 import com.tapit.core.TapItLog;
 
 import static android.R.drawable.btn_dialog;
 
+/**
+ * wrapper view for interstitial ads, which handles displaying a close button.
+ */
 public class InterstitialBaseView extends FrameLayout {
     private static final String TAG = "TapIt";
 
@@ -48,8 +49,7 @@ public class InterstitialBaseView extends FrameLayout {
     private static void beforeAdView(View child) {
         ViewParent parent = child.getParent();
         if (parent != null) {
-//            TapItLog.w(TAG, "Content view was previously attached elsewhere... re-parenting...");
-            Log.w(TAG, "Content view was previously attached elsewhere... re-parenting...");
+            TapItLog.w(TAG, "Content view was previously attached elsewhere... re-parenting...");
             ((ViewGroup)parent).removeView(child);
         }
     }

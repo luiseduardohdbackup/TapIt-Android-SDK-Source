@@ -10,6 +10,11 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
+        <TextView
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:text="TESTING" />
+
         <Button
             android:id="@+id/gLoadInterstitialButton"
             android:text="Load Interstitial"

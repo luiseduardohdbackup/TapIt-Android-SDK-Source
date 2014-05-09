@@ -1,7 +1,7 @@
 TapIt Android SDK
 =================
 
-Version 1.8.0
+Version 2.0.1
 
 This is the Android SDK for the TapIt! mobile ad network. Go to http://tapit.com/ for more details and to sign up.
 
@@ -40,11 +40,11 @@ Your manifest should look something like this:
 
 ![Example manifest](https://raw.github.com/tapit/TapIt-Android-SDK-Source/master/doc/assets/manifest.png)
 
-See https://github.com/tapit/TapIt-Android-SDK-Source/blob/master/src/example/AndroidManifest.xml for an example manifest file.
+See https://github.com/tapit/TapIt-Android-SDK-Source/blob/master/src/legacy-example/AndroidManifest.xml for an example manifest file.
 
 **NOTE:** Zones correspond to a specific ad type, which is specified through the TapIt dashboard.  Please ensure that you use the correct Zone ID for your ad units or you may experience un-expected results.
 
-A sample project is included in this repo.  See https://github.com/tapit/TapIt-Android-SDK-Source/tree/master/src/example for a live demo.
+A sample project is included in this repo.  See https://github.com/tapit/TapIt-Android-SDK-Source/tree/master/src/legacy-example for a live demo.
 
 AdPrompt Usage
 --------------
@@ -55,7 +55,7 @@ AdPrompt adPrompt = new AdPrompt(this, "YOUR_ZONE_ID");
 adPrompt.showAdPrompt();
 ````
 
-Sample implementation can be found here: https://github.com/tapit/TapIt-Android-SDK-Source/blob/master/src/example/src/com/yourcompany/TapItTestActivity.java#L178
+Sample implementation can be found here: https://github.com/tapit/TapIt-Android-SDK-Source/blob/master/src/legacy-example/src/com/yourcompany/SampleActivity.java#L179
 
 
 Banner Usage
@@ -119,7 +119,7 @@ bannerAd.setOnAdDownload(new OnAdDownload() {
 });
 ````
 
-Sample implementation can be found here: https://github.com/tapit/TapIt-Android-SDK-Source/blob/master/src/example/src/com/yourcompany/TapItTestActivity.java#L59
+Sample implementation can be found here: https://github.com/tapit/TapIt-Android-SDK-Source/blob/master/src/legacy-example/src/com/yourcompany/SampleActivity.java#L49
 
 
 Interstitial Usage
@@ -195,100 +195,10 @@ interstitialAd.setOnInterstitialAdDownload(new OnInterstitialAdDownload() {
 interstitialAd.load(); // request an ad from the server, to be displayed later...
 ````
 
-Sample implementation can be found here: https://github.com/tapit/TapIt-Android-SDK-Source/blob/master/src/example/src/com/yourcompany/TapItTestActivity.java#L191
-
-
-Video Ads Usage
-----------------
-TVAST SDK Version 1.0.3
-
-For sample video ads integration code, please see the VideoAdActivity.java and supporting VideoFullScreenActivity.java files for working example of video ads in an app.  You can find the above mentioned files in the src directory under com.tvast.tvastsdktest folder in this project.
-
-The TapItVAST SDK is resides in the included tapitvastsdk.jar file in the "lib" folder of this project.  The tapitvastsdk.jar file should be copied to the libs folder of any project that wishes to offer videos ads using the TapItVAST SDK.
- 
-Essentially, what needs to be included in the code are as follows:
-
-  public final static String VIDEO_ZONE_ID = "22219";
-  public final static String VIDEO_TYPE = "pre-roll";
-
-  android.util.Log.d("TapItVASTSDKTest", "TapItVAST SDK Version: " + TVASTAd.VERSION);
-
-  mVideoPlayer = (DemoPlayer) findViewById(R.id.contentVideo);
-  mAdPlayer = (DemoPlayer) findViewById(R.id.adVideo);
-
-  mAdsLoader = new TVASTAdsLoader(this);
-  mAdsLoader.addAdErrorListener(this);
-  mAdsLoader.addAdsLoadedListener(this);
-
-  setButtonListeners();
-  mVideoPlayer.addCallback(this);
-  mAdPlayer.addCallback(this);
-
-
-  protected void requestAd() {
-    TVASTAdsRequest request = new TVASTAdsRequest(VIDEO_ZONE_ID);
-    request.setRequestParameter("videotype", VIDEO_TYPE);
-    mAdsLoader.requestAds(request);
-  }
-
-  @Override
-  public void onAdError(TVASTAdErrorEvent event) {
-    toConsole("Ads error: " + event.getError().getMessage() + "\n");
-    mResetAdButton.setEnabled(true);
-    mRequestAdButton.setEnabled(true);
-  }
-
-  @Override
-  public void onAdsLoaded(TVASTAdsLoadedEvent event) {
-    toConsole("Ads loaded!");
-    mAdsManager = (TVASTVideoAdsManager) event.getManager();
-    mAdsManager.addAdErrorListener(this);
-    mAdsManager.addAdEventListener(this);
-    mResetAdButton.setEnabled(true);
-    mRequestAdButton.setEnabled(true);
-
-    mAdsManager.setIsFullscreen(mFullscreenAdCheckBox.isChecked());
-    if (mAdsManager.isFullscreen()) {
-		Intent intent = new Intent(this, VideoFullScreenActivity.class);
-		TVASTSharable sharedAdsManager = new TVASTSharable(mAdsManager);
-		intent.putExtra(VideoFullScreenActivity.EXTRA_AD_MANAGER, sharedAdsManager);
-		startActivity(intent);
-    }		
-    else
-    	mAdsManager.play(mAdPlayer);
-  }
-
-  @Override
-  public void onAdEvent(TVASTAdEvent event) {
-    toConsole("Event:" + event.getEventType());
-
-    switch (event.getEventType()) {
-      case CONTENT_PAUSE_REQUESTED:
-        if (mContentStarted) {
-        	mVideoPlayer.pauseContent();
-        	mVideoPlayer.getVideoView().setVisibility(View.GONE);
-        	mAdPlayer.getVideoView().setVisibility(View.VISIBLE);
-        	mAdPlayer.bringToFront();
-        	mAdPlaying = true;
-        }
-        break;
-      case CONTENT_RESUME_REQUESTED:
-        if (mContentStarted) {
-        	mVideoPlayer.resumeContent();
-        	mVideoPlayer.getVideoView().setVisibility(View.VISIBLE);
-        	mVideoPlayer.bringToFront();
-        	mAdPlayer.getVideoView().setVisibility(View.GONE);
-        	mAdPlaying = false;
-        }
-        break;
-      case CLICK:
-        mAdsManager.loadDestinationUrl(mWebView);
-    	break;
-    }
-  }
+Sample implementation can be found here: https://github.com/tapit/TapIt-Android-SDK-Source/blob/master/src/legacy-example/src/com/yourcompany/SampleActivity.java#L192
 
 
 ProGuard Settings
 -----------------
 Recommended ProGuard settings can be found here:
-https://github.com/tapit/TapIt-Android-SDK-Source/blob/master/src/example/proguard-project.txt
+https://github.com/tapit/TapIt-Android-SDK-Source/blob/master/src/legacy-example/proguard-project.txt

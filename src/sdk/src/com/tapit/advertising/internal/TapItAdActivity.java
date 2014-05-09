@@ -3,14 +3,10 @@ package com.tapit.advertising.internal;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.content.res.Configuration;
 import android.os.*;
-import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
-import android.widget.FrameLayout;
-//import com.tapit.core.TapItLog;
 
 public class TapItAdActivity extends Activity {
     private static final String TAG = "TapIt";
@@ -18,6 +14,7 @@ public class TapItAdActivity extends Activity {
 
     private InterstitialBaseView contentView = null;
     private AdActivityContentWrapper adActivityContentWrapper = null;
+    private boolean isContentStarted = false;
 
     /**
      * Convenience method for firing off the TapItAdActivity
@@ -62,6 +59,7 @@ public class TapItAdActivity extends Activity {
 
         // defaults, override in AdActivityContentWrapper.getContentView(...)
         getWindow().requestFeature(Window.FEATURE_PROGRESS);
+        getWindow().requestFeature(Window.FEATURE_NO_TITLE);
         getWindow().setFeatureInt(Window.FEATURE_PROGRESS, Window.PROGRESS_VISIBILITY_ON);
 
         Bundle extras = getIntent().getExtras();
@@ -79,10 +77,7 @@ public class TapItAdActivity extends Activity {
         });
 
         View wrapperView = adActivityContentWrapper.getContentView(this);
-        FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                Gravity.CENTER);
+        ViewGroup.LayoutParams lp = adActivityContentWrapper.getContentLayoutParams();
         contentView.addView(wrapperView, lp);
 
         setContentView(contentView);
@@ -96,7 +91,6 @@ public class TapItAdActivity extends Activity {
     public void onBackPressed() {
         // don't call super, we'll handle in close(), if allowed
 //        TapItLog.d(TAG, "TapItAdActivity.onBackPressed");
-//        Log.d(TAG, "TapItAdActivity.onBackPressed");
         if (adActivityContentWrapper.shouldClose()) {
             close();
         }
@@ -109,10 +103,12 @@ public class TapItAdActivity extends Activity {
     }
 
     @Override
-    public void onAttachedToWindow() {
-        super.onAttachedToWindow();
-//        TapItLog.d(TAG, "onAttachedToWindow");
-        adActivityContentWrapper.startContent();
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus && !isContentStarted) {
+            adActivityContentWrapper.startContent();
+            isContentStarted = true;
+        }
     }
 
     //TODO handle optional closing of this activity when user multitasks?
@@ -129,7 +125,6 @@ public class TapItAdActivity extends Activity {
             final Runnable dimmingRunnable = new Runnable(){
                 @Override
                 public void run() {
-//                    Log.d("SendDROID", "dimming");
                     TapItAdActivity.this.getWindow().getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LOW_PROFILE);
                 }
             };
@@ -138,7 +133,6 @@ public class TapItAdActivity extends Activity {
             getWindow().getDecorView().setOnSystemUiVisibilityChangeListener(new View.OnSystemUiVisibilityChangeListener() {
                 @Override
                 public void onSystemUiVisibilityChange(int visibility) {
-//                    Log.d("SendDROID", "will dim in a moment...");
                     if (visibility == View.SYSTEM_UI_FLAG_VISIBLE) {
                         handler.postDelayed(dimmingRunnable, 2000);
                     }
@@ -156,7 +150,7 @@ public class TapItAdActivity extends Activity {
      */
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-//        Log.d(TAG, "onActivityResult(" + requestCode + ", " + resultCode + ", " + data + ")");
+//        TapItLog.d(TAG, "onActivityResult(" + requestCode + ", " + resultCode + ", " + data + ")");
         close();
     }
 }

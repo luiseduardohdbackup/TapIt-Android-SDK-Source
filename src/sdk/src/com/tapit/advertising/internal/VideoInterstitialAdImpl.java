@@ -13,8 +13,8 @@ import android.view.Window;
 import android.widget.RelativeLayout;
 import com.tapit.advertising.*;
 import com.tapit.core.TapItLog;
-import com.phunware.tapitvastsdk.*;
-import com.phunware.tapitvastsdk.player.TVASTPlayer;
+import com.tapit.vasksdk.*;
+import com.tapit.vasksdk.player.TVASTPlayer;
 
 
 public class VideoInterstitialAdImpl extends AbstractStatefulAd implements TapItVideoInterstitialAd, TVASTAdsLoader.TVASTAdsLoadedListener, TVASTAdErrorListener {
@@ -37,7 +37,7 @@ public class VideoInterstitialAdImpl extends AbstractStatefulAd implements TapIt
      * Call {@link #load()} to initiate ad request.
      */
     public static TapItVideoInterstitialAd getVideoInterstitialAdForZone(Context context, String zone) {
-        TapItAdRequest request = new AdRequestImpl.BuilderImpl(zone).getPwAdRequest();
+        TapItAdRequest request = new AdRequestImpl.BuilderImpl(zone).getTapItAdRequest();
         return VideoInterstitialAdImpl.getVideoInterstitialAd(context, request);
 
     }
@@ -121,7 +121,7 @@ public class VideoInterstitialAdImpl extends AbstractStatefulAd implements TapIt
                     @Override
                     public boolean onTouch(View v, MotionEvent event) {
 //                        TapItLog.d(TAG, "AdActivityContentWrapper -> videoView -> layout.onTouch");
-                        showAdClickDestination(activity);
+                        showAdClickDestination();
 
                         return true;
                     }
@@ -157,11 +157,11 @@ public class VideoInterstitialAdImpl extends AbstractStatefulAd implements TapIt
                     videoView.setVisibility(View.GONE);
                 }
                 else {
-                    TapItLog.d(TAG, "no closing frame!");
+                    activity.close();
                 }
             }
 
-            private void showAdClickDestination(TapItAdActivity activity) {
+            private void showAdClickDestination() {
                 layout.setOnClickListener(null);
                 if (videoAdsManager.hasDestinationUrl()) {
                     videoView.stopAd();
@@ -319,7 +319,7 @@ public class VideoInterstitialAdImpl extends AbstractStatefulAd implements TapIt
             }
         });
         videoAdsManager.showCloseButton(false);
-        if (updateState(State.LOADED)) {
+        if (ratchetState(State.LOADED)) {
             if (showImmediately) {
                 show();
             }

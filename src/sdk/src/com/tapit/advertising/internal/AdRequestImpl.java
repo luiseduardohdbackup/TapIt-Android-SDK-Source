@@ -1,7 +1,8 @@
 package com.tapit.advertising.internal;
 
 import com.tapit.advertising.TapItAdRequest;
-import com.phunware.tapitvastsdk.TVASTAdsRequest;
+import com.tapit.adview.Utils;
+import com.tapit.vasksdk.TVASTAdsRequest;
 import com.tapit.adview.AdRequest;
 
 import java.util.*;
@@ -65,7 +66,7 @@ public final class AdRequestImpl implements TapItAdRequest {
      *
      * <h3>Simple Example:</h3>
      * <pre>
-     *     AdRequestImpl request = AdRequestImpl.Builder("YOUR_ZONE_ID").getPwAdRequest();
+     *     AdRequestImpl request = AdRequestImpl.Builder("YOUR_ZONE_ID").getTapItAdRequest();
      * </pre>
      *
      * <h3>Advanced Example:</h3>
@@ -79,7 +80,7 @@ public final class AdRequestImpl implements TapItAdRequest {
      *
      *                                              // add relevant keywords to improve ad relevance
      *                                              .setKeywords(listOfKeywords);
-     *     AdRequestImpl request = builder.getPwAdRequest();
+     *     AdRequestImpl request = builder.getTapItAdRequest();
      *     // pass request to ad class...
      * </pre>
      */
@@ -96,7 +97,7 @@ public final class AdRequestImpl implements TapItAdRequest {
         }
 
         @Override
-        public AdRequestImpl getPwAdRequest() {
+        public TapItAdRequest getTapItAdRequest() {
             return new AdRequestImpl(this);
         }
 
@@ -184,12 +185,10 @@ public final class AdRequestImpl implements TapItAdRequest {
             cparms.put("mode", "test");
         }
 
-        if (request.isLocationTrackingEnabled()) {
-            //TODO implement me!
-        }
+        adRequest.setAutomaticLocationTrackingEnabled(request.isLocationTrackingEnabled());
 
         if (!request.getKeywords().isEmpty()) {
-            //TODO implement me!
+            cparms.put("keywords", Utils.join(request.getKeywords(), ","));
         }
 
         if (request.getPlacementType() != null) {

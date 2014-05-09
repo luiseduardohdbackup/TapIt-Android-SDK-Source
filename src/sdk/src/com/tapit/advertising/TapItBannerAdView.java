@@ -1,6 +1,9 @@
 package com.tapit.advertising;
 
+import android.annotation.TargetApi;
 import android.content.Context;
+import android.os.Build;
+import android.os.Handler;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.view.View;
@@ -8,6 +11,7 @@ import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.view.WindowManager;
 import com.tapit.advertising.internal.AdRequestImpl;
+import com.tapit.adview.AdRequest;
 import com.tapit.adview.AdView;
 import com.tapit.adview.AdViewCore;
 import com.tapit.adview.Utils;
@@ -74,27 +78,15 @@ public final class TapItBannerAdView extends ViewGroup {
 
     public TapItBannerAdView(Context context) {
         super(context);
-        legacyBannerAdView = new AdView(context);
-        // stop poor implementation from loading immediately
-        stopRequestingAds();
-        addView(legacyBannerAdView);
     }
 
     public TapItBannerAdView(Context context, AttributeSet attrs) {
         super(context, attrs);
-        legacyBannerAdView = new AdView(context);
-        // stop poor implementation from loading immediately
-        stopRequestingAds();
-        addView(legacyBannerAdView);
         initAttributes(attrs, 0);
     }
 
     public TapItBannerAdView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
-        legacyBannerAdView = new AdView(context);
-        // stop poor implementation from loading immediately
-        stopRequestingAds();
-        addView(legacyBannerAdView);
         initAttributes(attrs, defStyle);
     }
 
@@ -111,8 +103,8 @@ public final class TapItBannerAdView extends ViewGroup {
      * @param zone Identifier of ad placement to be loaded.
      */
     public final void startRequestingAdsForZone(String zone) {
-//        AdRequestImpl request = new AdRequestImpl.BuilderImpl(zone).getPwAdRequest();
-        TapItAdRequest request = new AdRequestImpl.BuilderImpl(zone).getPwAdRequest();
+//        AdRequestImpl request = new AdRequestImpl.BuilderImpl(zone).getTapItAdRequest();
+        TapItAdRequest request = new AdRequestImpl.BuilderImpl(zone).getTapItAdRequest();
         startRequestingAds(request);
     }
 
@@ -125,11 +117,6 @@ public final class TapItBannerAdView extends ViewGroup {
             throw new NullPointerException("request cannot be null");
         }
 
-//        if (adRequest != null) {
-//            //TODO should we loosen this restriction?
-//            throw new IllegalStateException("AdRequestImpl was already set. Use resumeRequestingAds() instead.");
-//        }
-
         adRequest = request;
         resumeRequestingAds();
     }
@@ -140,17 +127,74 @@ public final class TapItBannerAdView extends ViewGroup {
      * was not provided earlier
      */
     public void resumeRequestingAds() {
-        legacyBannerAdView.startRequestingAds(AdRequestImpl.asImplAdRequest(adRequest));
-        legacyBannerAdView.setUpdateTime(getAdUpdateInterval());
+        removeAd();
+        legacyBannerAdView = new AdView(getContext());
+        legacyBannerAdView.setUpdateTime(0); // stop implementation from cycling on it's own
+        setupLegacyListener();
+
+        AdRequest legacyAdRequest = AdRequestImpl.asImplAdRequest(adRequest);
+        if (latitude != 0.0) {
+            legacyAdRequest.setLatitude(String.valueOf(latitude));
+        }
+        if (longitude != 0.0) {
+            legacyAdRequest.setLongitude(String.valueOf(longitude));
+        }
+        setContainerSize(legacyAdRequest);
+        legacyBannerAdView.startRequestingAds(legacyAdRequest);
+
+        // schedule the next ad request, unless ad rotation is disabled
+        long updateMillis = adUpdateIntervalSeconds * 1000;
+        if (updateMillis > 0) {
+            timerHandler.removeCallbacks(timerRunnable);
+            timerHandler.postDelayed(timerRunnable, updateMillis);
+        }
+    }
+
+    /**
+     * injects container size into legacy ad request so the server can use it for ad decisioning
+     * @param legacyAdRequest the legacy ad request to modify.
+     */
+    private void setContainerSize(AdRequest legacyAdRequest) {
+        LayoutParams lp = getLayoutParams();
+        if (lp != null) {
+            DisplayMetrics metrics = new DisplayMetrics();
+            WindowManager wm = (WindowManager) getContext().getSystemService(
+                    Context.WINDOW_SERVICE);
+
+            wm.getDefaultDisplay().getMetrics(metrics);
+            float mDensity = metrics.density;
+
+            if (lp.width != LayoutParams.MATCH_PARENT
+                    && lp.width != LayoutParams.WRAP_CONTENT) {
+                legacyAdRequest.setWidth((int)(lp.width / mDensity + 0.5));
+            }
+            if (lp.width != LayoutParams.MATCH_PARENT
+                    && lp.width != LayoutParams.WRAP_CONTENT) {
+                legacyAdRequest.setHeight((int)(lp.height / mDensity + 0.5));
+            }
+        }
+    }
+
+    private void removeAd() {
+        if (legacyBannerAdView != null) {
+            // clean up previous instance
+            ViewGroup parent = (ViewGroup)legacyBannerAdView.getParent();
+            if (parent != null) {
+                parent.removeView(legacyBannerAdView);
+            }
+            legacyBannerAdView.destroy();
+            legacyBannerAdView = null;
+        }
     }
 
     /**
      * stops banner ad from requesting new ads
      */
     public void stopRequestingAds() {
-        legacyBannerAdView.cancelUpdating();
-        legacyBannerAdView.setUpdateTime(9999999);
         autoLoad = false;
+
+        // abort the update timer
+        timerHandler.removeCallbacks(timerRunnable);
     }
 
     /**
@@ -163,10 +207,11 @@ public final class TapItBannerAdView extends ViewGroup {
             throw new IllegalArgumentException("delaySeconds cannot be negative");
         }
 
-        //TODO handle disabling update interval
-
         adUpdateIntervalSeconds = delaySeconds;
-        legacyBannerAdView.setUpdateTime(adUpdateIntervalSeconds);
+
+        if (delaySeconds == 0) {
+            stopRequestingAds();
+        }
     }
 
     /**
@@ -183,53 +228,73 @@ public final class TapItBannerAdView extends ViewGroup {
      * of ad lifecycle events
      */
     public void setListener(final BannerAdListener listener) {
-        if (listener != null) {
-            legacyBannerAdView.setOnAdDownload(new AdViewCore.OnAdDownload() {
-                @Override
-                public void begin(AdViewCore adView) {
-                    // noop
-                }
+        this.listener = listener;
+    }
 
-                @Override
-                public void end(AdViewCore adView) {
+    /**
+     * wires up the connections between this class and the legacy banner code so that lifecycle
+     * events bubble all the way back up.  Ad auto update is canceled when user interacts w/ ad.
+     */
+    private void setupLegacyListener() {
+        legacyBannerAdView.setOnAdDownload(new AdViewCore.OnAdDownload() {
+            @Override
+            public void begin(AdViewCore adView) {
+                // noop
+            }
+
+            @Override
+            public void end(AdViewCore adView) {
+                if (listener != null) {
                     listener.onReceiveBannerAd(TapItBannerAdView.this);
                 }
+                addView(adView);
+            }
 
-                @Override
-                public void error(AdViewCore adView, String error) {
+            @Override
+            public void error(AdViewCore adView, String error) {
+                if (listener != null) {
                     listener.onBannerAdError(TapItBannerAdView.this, error);
                 }
+                removeAd();
+            }
 
-                @Override
-                public void clicked(AdViewCore adView) {
-                    // noop
-                }
+            @Override
+            public void clicked(AdViewCore adView) {
+                // noop
+            }
 
-                @Override
-                public void willPresentFullScreen(AdViewCore adView) {
+            @Override
+            public void willPresentFullScreen(AdViewCore adView) {
+                stopRequestingAds();
+                if (listener != null) {
                     listener.onBannerAdFullscreen(TapItBannerAdView.this);
                 }
+            }
 
-                @Override
-                public void didPresentFullScreen(AdViewCore adView) {
-                    // noop
-                }
+            @Override
+            public void didPresentFullScreen(AdViewCore adView) {
+                // noop
+            }
 
-                @Override
-                public void willDismissFullScreen(AdViewCore adView) {
+            @Override
+            public void willDismissFullScreen(AdViewCore adView) {
+                if (listener != null) {
                     listener.onBannerAdDismissFullscreen(TapItBannerAdView.this);
                 }
+            }
 
-                @Override
-                public void willLeaveApplication(AdViewCore adView) {
+            @Override
+            public void willLeaveApplication(AdViewCore adView) {
+                if (listener != null) {
                     listener.onBannerAdLeaveApplication(TapItBannerAdView.this);
                 }
-            });
-        }
-        else {
-            legacyBannerAdView.setOnAdDownload(null);
-        }
-        this.listener = listener;
+            }
+
+            @Override
+            public void didResize(AdViewCore adView) {
+                stopRequestingAds();
+            }
+        });
     }
 
     /**
@@ -246,6 +311,9 @@ public final class TapItBannerAdView extends ViewGroup {
      * or -1 if no ad is currently available
      */
     public int getCurrentAdWidth() {
+        if (legacyBannerAdView == null) {
+            return -1;
+        }
         return legacyBannerAdView.getAdWidth();
     }
 
@@ -255,6 +323,9 @@ public final class TapItBannerAdView extends ViewGroup {
      * or -1 if no ad is currently available
      */
     public int getCurrentAdHeight() {
+        if (legacyBannerAdView == null) {
+            return -1;
+        }
         return legacyBannerAdView.getAdHeight();
     }
 
@@ -264,8 +335,8 @@ public final class TapItBannerAdView extends ViewGroup {
      * @param longitude the longitude in decimal degrees
      */
     public void updateLocation(double latitude, double longitude) {
-        legacyBannerAdView.setLatitude(String.valueOf(latitude));
-        legacyBannerAdView.setLongitude(String.valueOf(longitude));
+        this.latitude = latitude;
+        this.longitude = longitude;
     }
 
 
@@ -277,10 +348,20 @@ public final class TapItBannerAdView extends ViewGroup {
     static final int REFRESH_DELAY_SECONDS = 60;
     private static final String TAG = "TapIt";
 
-    private final AdView legacyBannerAdView;
+    private AdView legacyBannerAdView = null;
     private BannerAdListener listener = null;
     private TapItAdRequest adRequest = null;
     private int adUpdateIntervalSeconds = REFRESH_DELAY_SECONDS;
+    private double latitude;
+    private double longitude;
+
+    private final Handler timerHandler = new Handler();
+    private final Runnable timerRunnable = new Runnable() {
+        @Override
+        public void run() {
+            resumeRequestingAds();
+        }
+    };
 
     /**
      * Used by xml implementation to determine if ad requests should start
@@ -306,7 +387,7 @@ public final class TapItBannerAdView extends ViewGroup {
         if (zone != null) {
             adRequest = new AdRequestImpl.BuilderImpl(zone)
                     .setTestMode(isTestMode)
-                    .getPwAdRequest();
+                    .getTapItAdRequest();
         }
 
         if (autoLoad && zone == null) {
@@ -320,6 +401,7 @@ public final class TapItBannerAdView extends ViewGroup {
      **************************************************************/
 
 
+    @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
     @Override
     protected void onAttachedToWindow() {
 //        TapItLog.d(TAG, "onAttachedToWindow()");
@@ -333,7 +415,12 @@ public final class TapItBannerAdView extends ViewGroup {
                 @Override
                 public void onGlobalLayout() {
 //                    TapItLog.d(TAG, "onGlobalLayout()");
-                    vto.removeOnGlobalLayoutListener(this);
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+                        vto.removeOnGlobalLayoutListener(this); // only available on api lvl 16+
+                    }
+                    else {
+                        vto.removeGlobalOnLayoutListener(this);
+                    }
                     resumeRequestingAds();
 
                 }
@@ -368,8 +455,8 @@ public final class TapItBannerAdView extends ViewGroup {
         wm.getDefaultDisplay().getMetrics(metrics);
         float mDensity = metrics.density;
 
-        int maxWidth = Math.max(legacyBannerAdView.getAdWidth(), 0);
-        int maxHeight = Math.max(legacyBannerAdView.getAdHeight(), 0);
+        int maxWidth = Math.max(getCurrentAdWidth(), 0);
+        int maxHeight = Math.max(getCurrentAdHeight(), 0);
 //        TapItLog.d(TAG, "mw: " + maxWidth + ", mh: " + maxHeight);
 
         maxWidth = (int)(maxWidth * mDensity + 0.5);
@@ -385,13 +472,40 @@ public final class TapItBannerAdView extends ViewGroup {
 
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
-//        TapItLog.d(TAG, "TapItBannerAdView.onLayout(" + changed + ", " + l + ", " + t + ", " + r + ", " + b + ")");
 
-        int bannerWidth = r - l;
-        int bannerHeight = b - t;
-//        TapItLog.d(TAG, "Setting adview layout to (" + l + ", " + t + ", " + r + ", " + b + ")");
-//        TapItLog.d(TAG, "Setting adview layout to (" + 0 + ", " + 0 + ", " + bannerWidth + ", " + bannerHeight + ")");
+        if (legacyBannerAdView != null) {
+            // center the ad inside the container
 
-        legacyBannerAdView.layout(0, 0, bannerWidth, bannerHeight);
+            DisplayMetrics metrics = new DisplayMetrics();
+            WindowManager wm = (WindowManager) getContext().getSystemService(
+                    Context.WINDOW_SERVICE);
+
+            wm.getDefaultDisplay().getMetrics(metrics);
+            float mDensity = metrics.density;
+
+
+            int containerWidth = r - l;
+            int containerHeight = b - t;
+
+            int adWidth = getCurrentAdWidth();
+            int adHeight = getCurrentAdHeight();
+
+            if (adWidth <= 0 || adHeight <= 0) {
+                // server didn't specify an ad size, just default to container size
+                adWidth = containerWidth;
+                adHeight = containerHeight;
+            }
+            else {
+                adWidth = (int)(adWidth * mDensity + 0.5);
+                adHeight = (int)(adHeight * mDensity + 0.5);
+            }
+
+            int adLeft = (containerWidth - adWidth) / 2;
+            int adTop = (containerHeight - adHeight) / 2;
+            int adRight = adWidth + adLeft;
+            int adBottom = adHeight + adTop;
+
+            legacyBannerAdView.layout(adLeft, adTop, adRight, adBottom);
+        }
     }
 }

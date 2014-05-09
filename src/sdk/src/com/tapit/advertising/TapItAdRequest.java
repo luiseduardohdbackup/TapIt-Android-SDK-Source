@@ -1,7 +1,5 @@
 package com.tapit.advertising;
 
-import com.tapit.advertising.internal.AdRequestImpl;
-
 import java.util.List;
 import java.util.Map;
 
@@ -48,7 +46,7 @@ public interface TapItAdRequest {
      *
      * <h3>Example Usage</h3>
      * <pre>
-     * TapItAdRequest.Builder builder = TapItAdvertising.getPwAdRequestBuilder("YOUR_ZONE_ID")
+     * TapItAdRequest.Builder builder = TapItAdvertising.getTapItAdRequestBuilder("YOUR_ZONE_ID")
      *                                          // enable test mode during development
      *                                          .setTestMode(true)
      *
@@ -57,12 +55,12 @@ public interface TapItAdRequest {
      *
      *                                          // add relevant keywords to improve ad relevance
      *                                          .setKeywords(listOfKeywords);
-     * TapItAdRequest request = builder.getPwAdRequest();
+     * TapItAdRequest request = builder.getTapItAdRequest();
      * </pre>
      */
     public static interface Builder {
 
-        public AdRequestImpl getPwAdRequest();
+        public TapItAdRequest getTapItAdRequest();
 
         public String getZone();
 

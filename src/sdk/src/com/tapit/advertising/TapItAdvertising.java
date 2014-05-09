@@ -7,22 +7,32 @@ import android.content.pm.PackageManager;
 import android.widget.Toast;
 import com.tapit.advertising.*;
 import com.tapit.advertising.internal.*;
+import com.tapit.adview.AdViewCore;
 import com.tapit.adview.Utils;
 
-public class TapItAdvertising {
+public final class TapItAdvertising {
 
     private static TapItAdvertising instance = null;
+    private static final Object lock = new Object();
 
     private TapItAdvertising() {}
 
+    public static String getVersion() {
+        return AdViewCore.VERSION;
+    }
+
     /**
-     * Get an instance of the TapItAdvertising which allows you to instanciate
+     * Get an instance of the TapItAdvertising which allows you to instantiate
      * ad objects
      * @return a TapItAdvertising instance
      */
     public static TapItAdvertising get() {
         if (instance == null) {
-            instance = new TapItAdvertising();
+            synchronized (lock) {
+                if (instance == null) {
+                    instance = new TapItAdvertising();
+                }
+            }
         }
         return instance;
     }
@@ -59,16 +69,16 @@ public class TapItAdvertising {
 
 
     /**
-     * TODO add docs here!
+     * Factory method which generates AdRequest objects used to hold request configuration details.
      * @param zone Identifier of ad placement to be loaded.
      * @return A TapItAdRequest instance that can be used to initialize an ad
      */
     public TapItAdRequest getAdRequestForZone(String zone) {
-        return getAdRequestBuilder(zone).getPwAdRequest();
+        return getAdRequestBuilder(zone).getTapItAdRequest();
     }
 
     /**
-     * TODO add docs here!
+     * Factory method which generates AdRequest builder objects used to construct custom request objects.
      * @param zone Identifier of ad placement to be loaded.
      * @return A TapItAdRequestBuilder instance that can be used to construct a TapItAdRequest
      */

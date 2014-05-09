@@ -1,6 +1,5 @@
 package com.tapit.adview;
 
-import com.tapit.advertising.internal.DeprecatedInterstitialBaseView;
 import android.content.Context;
 
 /**

@@ -1,8 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">TapIt Example</string>
-    <string name="adprompt">AdPrompt</string>
+    <string name="app_name">Advertising Sample</string>
     <string name="interstitial">Interstitial</string>
     <string name="video">Video</string>
     <string name="banner">Banner</string>
+
+    <string name="banner_zone_id">7979</string>
+    <string name="video_zone_id">7981</string>
+    <string name="intrs_zone_id">7983</string>
+
 </resources>

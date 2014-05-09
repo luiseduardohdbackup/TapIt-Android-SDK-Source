@@ -6,18 +6,21 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.LinearLayout;
+import com.tapit.core.TapItLog;
 
 /**
  * Sets up a WebView w/ the appropriate config.  Also handles forwarding external
  * urls to the system where they can be routed appropriately.
  */
 public class BasicWebView extends WebView {
+    private static final String TAG = "TapIt";
 
     /**
      * override this object to customize webview behavior
@@ -40,6 +43,7 @@ public class BasicWebView extends WebView {
          *         this url.
          */
         public boolean shouldOverrideUrlLoading(BasicWebView view, String url) {
+            TapItLog.d(TAG, "BasicWebView.shouldOverrideUrlLoading(" + url + ')');
             if (BasicWebView.isExternalUrl(url)) {
                 willLeaveApplication(view);
                 BasicWebView.openInExternalBrowser(view.getContext(), url);
@@ -132,13 +136,25 @@ public class BasicWebView extends WebView {
         this.listener = listener;
     }
 
+    @Override
+    public void loadUrl(String url) {
+        if (isExternalUrl(url)) {
+            openInExternalBrowser(getContext(), url);
+        }
+        else {
+            super.loadUrl(url);
+        }
+    }
+
     public static boolean isExternalUrl(String url) {
         return !(url.toLowerCase().startsWith("http://")
                   || url.toLowerCase().startsWith("https://"));
     }
 
     public static void openInExternalBrowser(Context context, String url) {
+        TapItLog.d(TAG, "BasicWebView.openInExternalBrowser(" + url + ')');
         Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+
         if (context instanceof TapItAdActivity) {
             ((Activity)context).startActivityForResult(intent,3);
         }

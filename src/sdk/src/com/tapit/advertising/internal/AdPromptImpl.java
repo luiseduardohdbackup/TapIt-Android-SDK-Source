@@ -12,7 +12,7 @@ public final class AdPromptImpl implements TapItAdPrompt {
 
 
     public static TapItAdPrompt getAdPromptForZone(Context context, String zone) {
-        TapItAdRequest request = new AdRequestImpl.BuilderImpl(zone).getPwAdRequest();
+        TapItAdRequest request = new AdRequestImpl.BuilderImpl(zone).getTapItAdRequest();
         return getAdPrompt(context, request);
     }
 
