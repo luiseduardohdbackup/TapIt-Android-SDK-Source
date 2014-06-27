@@ -1,7 +1,7 @@
 TapIt Android SDK
 =================
 
-Version 2.0.1
+Version 2.0.2
 
 This is the Android SDK for the TapIt! mobile ad network. Go to http://tapit.com/ for more details and to sign up.
 
@@ -12,7 +12,7 @@ This is the Android SDK for the TapIt! mobile ad network. Go to http://tapit.com
 Requrements:
 ------------
 Android SDK 2.2+ (API level 8) or above
-
+Google Play Services to enable Advertising Id support (Recommended)
 
 Usage:
 ------
@@ -40,6 +40,9 @@ for legacy API documentation.*
 <activity
     android:name="com.tapit.adview.AdActivity"
     android:configChanges="keyboard|keyboardHidden|orientation|screenSize" />
+
+
+[Configure Google Play Services](https://developer.android.com/google/play-services/setup.html) (Recommended)
 
 ````
 See [AndroidManifest.xml](https://github.com/tapit/TapIt-Android-SDK-Source/blob/master/src/example/AndroidManifest.xml) for an example manifest file.

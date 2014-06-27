@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Rect;
 import android.os.AsyncTask;
 import android.util.Xml;
+import android.webkit.WebView;
 import com.tapit.core.TapItLog;
 import com.tapit.vasksdk.TVASTAdError.AdErrorCode;
 import com.tapit.vasksdk.TVASTAdError.AdErrorType;
@@ -48,6 +49,7 @@ public class TVASTAdsLoader {
     private TVASTAdsRequest mAdRequest;
     private ArrayList<TVASTAdsLoadedListener> mLoadedListeners;
     private ArrayList<TVASTAdErrorListener> mErrorListeners;
+    private String userAgent = null;
 
     private String mRootErrorUri;
 
@@ -271,7 +273,7 @@ public class TVASTAdsLoader {
                     String apiFramework = parser.getAttributeValue(namespace, "apiFramework");
 
                     int iSequence = Integer.parseInt(sequence);
-                    TVASTCreative creative = (creatives == null || creatives.get(i) == null) ? new TVASTCreative()
+                    TVASTCreative creative = (creatives == null || creatives.size() <= i || creatives.get(i) == null) ? new TVASTCreative()
                             : creatives.get(i);
                     creative.setAdId(adId);
                     creative.setSequence(iSequence);
@@ -732,10 +734,19 @@ public class TVASTAdsLoader {
     }
 
     private class DownloadXmlTask extends AsyncTask<String, Void, Object> {
+        private final TVASTAdsLoader loader;
+        DownloadXmlTask(TVASTAdsLoader loader) {
+            this.loader = loader;
+        }
+
         @Override
         protected Object doInBackground(String... urls) {
             try {
-                TVASTAd trmaAd = loadXmlFromNetwork(urls[0], null);
+                loader.mAdRequest.initDefaultParameters(loader.mContext);
+                String requestURL = loader.mAdRequest.toString();
+                TapItLog.d(TAG, "request URL: " + requestURL);
+
+                TVASTAd trmaAd = loadXmlFromNetwork(requestURL, null);
                 if (trmaAd != null) {
                     HashMap<String, List<TVASTAd>> adsMap = new HashMap<String, List<TVASTAd>>();
                     List<TVASTAd> videoAds = new ArrayList<TVASTAd>();
@@ -857,11 +868,15 @@ public class TVASTAdsLoader {
     public void requestAds(TVASTAdsRequest adRequest) {
         mAdRequest = adRequest;
 
-        String requestURL = mAdRequest.toString();
-        TapItLog.d(TAG, "request URL: " + requestURL);
+        String requestURL = null;
+        if(userAgent == null) {
+            WebView webView = new WebView(mContext);
+            userAgent = webView.getSettings().getUserAgentString();
+        }
+        mAdRequest.setUa(userAgent);
 
         // Process the ad request.
-        new DownloadXmlTask().execute(requestURL);
+        new DownloadXmlTask(this).execute(requestURL);
     }
 
     public TVASTAdsLoader(Context context) {

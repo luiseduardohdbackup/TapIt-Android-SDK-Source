@@ -4,6 +4,9 @@ import android.Manifest;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.os.AsyncTask;
+import android.os.Build;
+import android.util.Log;
 import android.widget.Toast;
 import com.tapit.advertising.*;
 import com.tapit.advertising.internal.*;
@@ -11,7 +14,7 @@ import com.tapit.adview.AdViewCore;
 import com.tapit.adview.Utils;
 
 public final class TapItAdvertising {
-
+    private static final String TAG = "TapIt";
     private static TapItAdvertising instance = null;
     private static final Object lock = new Object();
 
@@ -44,7 +47,7 @@ public final class TapItAdvertising {
      * @throws IllegalStateException if your manifest is not configured properly.
      *         The exception description explains what is mis-configured.
      */
-    public void validateSetup(Context context) {
+    public void validateSetup(final Context context) {
         // test that required permissions are specified
         if (!Utils.hasPermission(context, Manifest.permission.INTERNET)) {
             throw new IllegalStateException("TapItAdvertising requires the \"INTERNET\" permission.");
@@ -55,11 +58,36 @@ public final class TapItAdvertising {
         ComponentName cn = new ComponentName(context.getPackageName(), TapItAdActivity.class.getCanonicalName());
         try {
             pm.getActivityInfo(cn, PackageManager.GET_META_DATA);
-            Toast.makeText(context, "TapItAdvertising module was set up properly!", Toast.LENGTH_LONG).show();
         } catch (PackageManager.NameNotFoundException e) {
             throw new IllegalStateException("TapItAdvertising requires the \"TapItAdActivity\" activity.");
         }
 
+        AsyncTask<Boolean, Boolean, Boolean> asyncTask = new AsyncTask<Boolean, Boolean, Boolean>() {
+            @Override
+            protected Boolean doInBackground(Boolean... booleans) {
+                DeviceCapabilities.AdvertisingInfo advertisingInfo = DeviceCapabilities.getAdvertiserInfo(context);
+                return advertisingInfo != null;
+            }
+
+            @Override
+            protected void onPostExecute(Boolean wasSuccessful) {
+                super.onPostExecute(wasSuccessful);
+                if (wasSuccessful) {
+                    Toast.makeText(context, "TapItAdvertising module was set up properly!", Toast.LENGTH_LONG).show();
+                }
+                else {
+                    Toast.makeText(context, "Include Google Play Services support for enhanced ad delivery", Toast.LENGTH_LONG).show();
+                    Log.e(TAG, "Advertising ID not available. Include Google Play Services support for enhanced ad delivery.");
+                }
+            }
+        };
+
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+            asyncTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, false);
+        }
+        else {
+            asyncTask.execute(false);
+        }
     }
 
 

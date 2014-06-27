@@ -84,7 +84,7 @@ public class VideoInterstitialAdImpl extends AbstractStatefulAd implements TapIt
         //TODO fire TapItVideoInterstitialAdListener callbacks
 
         TVASTAdsRequest tvastRequest = AdRequestImpl.asTVASTImplAdRequest(adRequest);
-        tvastRequest.initDefaultParameters(context);
+//        tvastRequest.initDefaultParameters(context);
 
         videoLoader.addAdsLoadedListener(this);
         videoLoader.addAdErrorListener(this);

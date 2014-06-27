@@ -5,6 +5,7 @@ import java.net.URLEncoder;
 import java.util.*;
 
 import android.content.Context;
+import com.tapit.advertising.internal.DeviceCapabilities;
 import com.tapit.core.TapItLog;
 
 public class AdRequest {
@@ -50,12 +51,24 @@ public class AdRequest {
         String deviceIdMD5 = Utils.getDeviceIdMD5(context);
         String carrierName = Utils.getCarrierName(context);
         String carrierId = Utils.getCarrierId(context);
-        String ua = Utils.getUserAgentString(context);
-
-        adLog.log(AdLog.LOG_LEVEL_2, AdLog.LOG_TYPE_INFO, "deviceIdMD5", deviceIdMD5);
-        if ((deviceIdMD5 != null) && (deviceIdMD5.length() > 0)) {
-            parameters.put(PARAMETER_DEVICE_ID, deviceIdMD5);
+        DeviceCapabilities.AdvertisingInfo adInfo = DeviceCapabilities.getAdvertiserInfo(context);
+        if (adInfo != null) {
+            String advertisingId = adInfo.getId();
+            boolean isLAT = adInfo.isLimitAdTrackingEnabled();
+            if (advertisingId != null) {
+                parameters.put("adid", advertisingId);
+                if (isLAT) {
+                    parameters.put("ate", "0");
+                }
+            }
         }
+        else {
+            adLog.log(AdLog.LOG_LEVEL_2, AdLog.LOG_TYPE_INFO, "deviceIdMD5", deviceIdMD5);
+            if ((deviceIdMD5 != null) && (deviceIdMD5.length() > 0) && !deviceIdMD5.equals("unknown")) {
+                parameters.put(PARAMETER_DEVICE_ID, deviceIdMD5);
+            }
+        }
+
 
         parameters.put("format", "json");
         parameters.put("sdk", "android-v" + AdViewCore.VERSION);

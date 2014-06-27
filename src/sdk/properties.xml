@@ -28,6 +28,7 @@
 
     <path id="src.dependencies.pathref">
         <pathelement path="${android.jar}"/>
+        <pathelement path="libs/google-play-services.jar"/>
         <pathelement path="libs/GoogleAdMobAdsSdk-6.4.1.jar"/>
     </path>
 

@@ -21,8 +21,8 @@ public final class Config {
         Properties prop = new Properties();
 
         String t_env = "prod";
-        String t_sdk_v = "1.1.1";
-        String t_core_req = "1.0.0";
+        String t_sdk_v = "1.1.2";
+        String t_core_req = "1.3.2";
         try {
             // load a properties file
             prop.load(Config.class.getClassLoader().getResourceAsStream("com.tapit.advertising/internal/config.properties"));

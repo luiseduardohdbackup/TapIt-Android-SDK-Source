@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import com.tapit.advertising.*;
+import com.tapit.core.TapItLog;
 
 
 public class AdvertisingSample extends Activity {
@@ -16,6 +17,9 @@ public class AdvertisingSample extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
+
+        // enable debug logs during development
+        TapItLog.setShowLog(true);
 
         // test that you've integrated properly
         // NOTE: remove this before your app goes live!

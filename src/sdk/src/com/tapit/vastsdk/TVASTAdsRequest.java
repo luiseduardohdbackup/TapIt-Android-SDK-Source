@@ -1,6 +1,7 @@
 package com.tapit.vasksdk;
 
 import android.content.Context;
+import com.tapit.advertising.internal.DeviceCapabilities;
 import com.tapit.core.TapItLog;
 
 import java.io.UnsupportedEncodingException;
@@ -46,19 +47,32 @@ public class TVASTAdsRequest {
     }
 
     public void initDefaultParameters(Context context) {
-        String deviceIdMD5 = TVASTUtils.getDeviceIdMD5(context);
         String carrierName = TVASTUtils.getCarrier(context);
-        String ua = TVASTUtils.getUserAgentString(context);
+//        String ua = TVASTUtils.getUserAgentString(context);
 
-        if ((deviceIdMD5 != null) && (deviceIdMD5.length() > 0)) {
-            mParameters.put(PARAMETER_DEVICE_ID, deviceIdMD5);
+        DeviceCapabilities.AdvertisingInfo adInfo = DeviceCapabilities.getAdvertiserInfo(context);
+        if (adInfo != null) {
+            String advertisingId = adInfo.getId();
+            boolean isLAT = adInfo.isLimitAdTrackingEnabled();
+            if (advertisingId != null) {
+                mParameters.put("adid", advertisingId);
+                if (isLAT) {
+                    mParameters.put("ate", "0");
+                }
+            }
+        }
+        else {
+            String deviceIdMD5 = TVASTUtils.getDeviceIdMD5(context);
+            if ((deviceIdMD5 != null) && (deviceIdMD5.length() > 0) && !deviceIdMD5.equals("unknown")) {
+                mParameters.put(PARAMETER_DEVICE_ID, deviceIdMD5);
+            }
         }
 
         mParameters.put("format", "vast");
         mParameters.put("sdk", "android-v" + TVASTAd.VERSION);
         mParameters.put(PARAMETER_CARRIER, carrierName);
         mParameters.put(PARAMETER_LANGUAGES, Locale.getDefault().getLanguage());
-        mParameters.put(PARAMETER_USER_AGENT, ua);
+//        mParameters.put(PARAMETER_USER_AGENT, ua);
     }
 
     /**

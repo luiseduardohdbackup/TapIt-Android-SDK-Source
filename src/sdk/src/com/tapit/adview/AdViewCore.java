@@ -43,7 +43,7 @@ import android.widget.FrameLayout;
  * Viewer of advertising.
  */
 public abstract class AdViewCore extends WebView {
-    public static final String VERSION = "2.0.1";
+    public static final String VERSION = "2.0.2";
     public static final String TAG = "TapIt";
 
     private static final long AD_DEFAULT_RELOAD_PERIOD = 120000; // milliseconds
@@ -424,7 +424,6 @@ public abstract class AdViewCore extends WebView {
         setupWebView();
 
         adRequest = new AdRequest(adLog);
-        adRequest.initDefaultParameters(context);
         adRequest
                 .setZone(zone)
                 .setLatitude(latitude)
@@ -2155,12 +2154,14 @@ public abstract class AdViewCore extends WebView {
 //            sb.append("\"storePicture\"");
 //        }
 
-        if (this.isHardwareAccelerated()) {
-            if (sb.length() > 1) {
-                sb.append(',');
-            }
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+            if (this.isHardwareAccelerated()) {
+                if (sb.length() > 1) {
+                    sb.append(',');
+                }
 
-            sb.append("\"inlineVideo\"");
+                sb.append("\"inlineVideo\"");
+            }
         }
 
         sb.append(']');
