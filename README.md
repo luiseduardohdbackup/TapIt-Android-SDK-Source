@@ -11,8 +11,8 @@ This is the Android SDK for the TapIt! mobile ad network. Go to http://tapit.com
 
 Requrements:
 ------------
-Android SDK 2.2+ (API level 8) or above
-Google Play Services to enable Advertising Id support (Recommended)
+* Android SDK 2.2+ (API level 8) or above
+* Google Play Services to enable Advertising Id support (Recommended) [Installation Instructions](https://developer.android.com/google/play-services/id.html)
 
 Usage:
 ------
