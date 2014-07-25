@@ -1,4 +1,4 @@
-package com.tapit.vasksdk.player;
+package com.tapit.vastsdk.player;
 
 import android.widget.VideoView;
 

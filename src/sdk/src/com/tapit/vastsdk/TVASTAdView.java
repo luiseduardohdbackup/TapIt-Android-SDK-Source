@@ -1,4 +1,4 @@
-package com.tapit.vasksdk;
+package com.tapit.vastsdk;
 
 import android.app.Activity;
 import android.content.Context;

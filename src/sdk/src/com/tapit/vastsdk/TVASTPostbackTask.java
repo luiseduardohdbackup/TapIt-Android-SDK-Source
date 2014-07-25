@@ -1,4 +1,4 @@
-package com.tapit.vasksdk;
+package com.tapit.vastsdk;
 
 import android.os.AsyncTask;
 import org.apache.http.HttpEntity;

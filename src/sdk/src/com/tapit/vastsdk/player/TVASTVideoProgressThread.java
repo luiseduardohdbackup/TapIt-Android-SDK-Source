@@ -1,11 +1,11 @@
-package com.tapit.vasksdk.player;
+package com.tapit.vastsdk.player;
 
 import android.os.Handler;
 import android.os.Handler.Callback;
 import android.os.Looper;
 import android.os.Message;
 import com.tapit.core.TapItLog;
-import com.tapit.vasksdk.player.TVASTPlayer.TVASTAdPlayerListener;
+import com.tapit.vastsdk.player.TVASTPlayer.TVASTAdPlayerListener;
 
 import java.util.List;
 

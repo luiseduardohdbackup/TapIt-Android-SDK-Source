@@ -8,8 +8,8 @@ import android.widget.FrameLayout;
 import android.widget.TextView;
 import android.widget.VideoView;
 import com.tapit.core.TapItLog;
-import com.tapit.vasksdk.player.TVASTPlayer;
-import com.tapit.vasksdk.player.TVASTTrackingVideoView;
+import com.tapit.vastsdk.player.TVASTPlayer;
+import com.tapit.vastsdk.player.TVASTTrackingVideoView;
 
 
 public class VastPlayerView extends FrameLayout implements TVASTPlayer, TVASTPlayer.TVASTAdPlayerListener {

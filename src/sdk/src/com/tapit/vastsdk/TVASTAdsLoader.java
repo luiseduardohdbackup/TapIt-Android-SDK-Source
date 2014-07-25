@@ -1,4 +1,4 @@
-package com.tapit.vasksdk;
+package com.tapit.vastsdk;
 
 import android.content.Context;
 import android.graphics.Rect;
@@ -6,8 +6,8 @@ import android.os.AsyncTask;
 import android.util.Xml;
 import android.webkit.WebView;
 import com.tapit.core.TapItLog;
-import com.tapit.vasksdk.TVASTAdError.AdErrorCode;
-import com.tapit.vasksdk.TVASTAdError.AdErrorType;
+import com.tapit.vastsdk.TVASTAdError.AdErrorCode;
+import com.tapit.vastsdk.TVASTAdError.AdErrorType;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 

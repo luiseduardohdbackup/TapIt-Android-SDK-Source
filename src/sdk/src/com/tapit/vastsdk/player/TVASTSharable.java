@@ -1,4 +1,4 @@
-package com.tapit.vasksdk.player;
+package com.tapit.vastsdk.player;
 
 import android.os.Parcel;
 import android.os.Parcelable;

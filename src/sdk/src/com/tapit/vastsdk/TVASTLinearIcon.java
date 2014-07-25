@@ -1,4 +1,4 @@
-package com.tapit.vasksdk;
+package com.tapit.vastsdk;
 
 import android.graphics.Rect;
 import android.os.Parcel;

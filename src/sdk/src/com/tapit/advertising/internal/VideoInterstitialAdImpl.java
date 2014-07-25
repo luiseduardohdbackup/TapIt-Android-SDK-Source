@@ -13,8 +13,8 @@ import android.view.Window;
 import android.widget.RelativeLayout;
 import com.tapit.advertising.*;
 import com.tapit.core.TapItLog;
-import com.tapit.vasksdk.*;
-import com.tapit.vasksdk.player.TVASTPlayer;
+import com.tapit.vastsdk.*;
+import com.tapit.vastsdk.player.TVASTPlayer;
 
 
 public class VideoInterstitialAdImpl extends AbstractStatefulAd implements TapItVideoInterstitialAd, TVASTAdsLoader.TVASTAdsLoadedListener, TVASTAdErrorListener {

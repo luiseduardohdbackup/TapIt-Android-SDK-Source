@@ -48,7 +48,6 @@ public class AdRequest {
     }
 
     public void initDefaultParameters(Context context) {
-        String deviceIdMD5 = Utils.getDeviceIdMD5(context);
         String carrierName = Utils.getCarrierName(context);
         String carrierId = Utils.getCarrierId(context);
         DeviceCapabilities.AdvertisingInfo adInfo = DeviceCapabilities.getAdvertiserInfo(context);
@@ -63,6 +62,7 @@ public class AdRequest {
             }
         }
         else {
+            String deviceIdMD5 = Utils.getDeviceIdMD5(context);
             adLog.log(AdLog.LOG_LEVEL_2, AdLog.LOG_TYPE_INFO, "deviceIdMD5", deviceIdMD5);
             if ((deviceIdMD5 != null) && (deviceIdMD5.length() > 0) && !deviceIdMD5.equals("unknown")) {
                 parameters.put(PARAMETER_DEVICE_ID, deviceIdMD5);

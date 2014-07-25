@@ -1,4 +1,4 @@
-package com.tapit.vasksdk;
+package com.tapit.vastsdk;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -13,10 +13,10 @@ import android.view.ViewGroup.LayoutParams;
 import android.widget.ImageButton;
 import android.widget.RelativeLayout;
 import com.tapit.core.TapItLog;
-import com.tapit.vasksdk.player.TVASTPlayer;
-import com.tapit.vasksdk.TVASTAdError.AdErrorCode;
-import com.tapit.vasksdk.TVASTAdError.AdErrorType;
-import com.tapit.vasksdk.player.TVASTPlayer.TVASTAdPlayerListener;
+import com.tapit.vastsdk.player.TVASTPlayer;
+import com.tapit.vastsdk.TVASTAdError.AdErrorCode;
+import com.tapit.vastsdk.TVASTAdError.AdErrorType;
+import com.tapit.vastsdk.player.TVASTPlayer.TVASTAdPlayerListener;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -447,7 +447,7 @@ public class TVASTVideoAdsManager implements TVASTAdPlayerListener {
 
     /**
      * VideoAdPlayerCallback implementations follow:
-     * @see com.tapit.vasksdk.player.TVASTPlayer.TVASTAdPlayerListener
+     * @see com.tapit.vastsdk.player.TVASTPlayer.TVASTAdPlayerListener
      */
     @Override
     public void onVideoClick(TVASTPlayer player) {

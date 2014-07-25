@@ -1,5 +1,5 @@
 TapIt Android SDK
-Version 2.0.2
+Version 2.0.3
 
 Complete implementation instructions can be found at:
 https://github.com/tapit/TapIt-Android-SDK-Source

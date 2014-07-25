@@ -2,7 +2,7 @@ package com.tapit.advertising.internal;
 
 import com.tapit.advertising.TapItAdRequest;
 import com.tapit.adview.Utils;
-import com.tapit.vasksdk.TVASTAdsRequest;
+import com.tapit.vastsdk.TVASTAdsRequest;
 import com.tapit.adview.AdRequest;
 
 import java.util.*;

@@ -1,3 +1,6 @@
+2.0.3
+* Fixed misspelled vast package path
+
 2.0.2
 * added support for Google Advertising Id
 

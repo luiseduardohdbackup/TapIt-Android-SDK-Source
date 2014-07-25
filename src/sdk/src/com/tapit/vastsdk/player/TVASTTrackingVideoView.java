@@ -1,4 +1,4 @@
-package com.tapit.vasksdk.player;
+package com.tapit.vastsdk.player;
 
 import android.content.Context;
 import android.media.MediaPlayer;
@@ -6,7 +6,7 @@ import android.media.MediaPlayer.OnCompletionListener;
 import android.media.MediaPlayer.OnErrorListener;
 import android.media.MediaPlayer.OnPreparedListener;
 import android.widget.VideoView;
-import com.tapit.vasksdk.player.TVASTPlayer.TVASTAdPlayerListener;
+import com.tapit.vastsdk.player.TVASTPlayer.TVASTAdPlayerListener;
 
 import java.util.ArrayList;
 import java.util.List;
