@@ -38,7 +38,7 @@ for legacy API documentation.*
 
 <!-- inside of the application tag: -->
 <activity
-    android:name="com.tapit.adview.AdActivity"
+    android:name="com.tapit.advertising.internal.TapItAdActivity"
     android:configChanges="keyboard|keyboardHidden|orientation|screenSize" />
 
 
