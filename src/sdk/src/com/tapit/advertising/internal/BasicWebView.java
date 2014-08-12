@@ -5,8 +5,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.net.Uri;
+import android.os.Build;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.WebChromeClient;
@@ -90,9 +90,11 @@ public class BasicWebView extends WebView {
         getSettings().setJavaScriptEnabled(true);
         getSettings().setSupportZoom(true);
         getSettings().setBuiltInZoomControls(true);
-//        webView.getSettings().setLoadWithOverviewMode(true); // not supported by older versions of Android
         setScrollBarStyle(View.SCROLLBARS_INSIDE_OVERLAY);
         getSettings().setUseWideViewPort(true);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+            getSettings().setMediaPlaybackRequiresUserGesture(false);
+        }
 
         setWebViewClient(new WebViewClient() {
             @Override
@@ -107,6 +109,7 @@ public class BasicWebView extends WebView {
             @Override
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
+                TapItLog.d(TAG, "onPageFinished: " + url);
             }
 
             @Override

@@ -1,11 +1,15 @@
 package com.tapit.advertising.internal;
 
+import android.content.Context;
 import com.tapit.core.TapItLog;
 
 /**
  * logic for tracking ad state, such as ignoring load requests to ads that are
  * currently loading, and handling automatic "load and show" functionality when
  * end user calls ad.show() before ad.load().
+ *
+ * A secondary responsiblity of this class is to handle the context reference,
+ * and disposing of it at the appropriate time so that we avoid memory leaks.
  *
  * This class is not thread safe.
  */
@@ -15,6 +19,21 @@ public abstract class AbstractStatefulAd {
     protected static enum State { NEW, LOADING, LOADED, SHOWN, DONE }
     protected boolean showImmediately = false;
     protected State state = State.NEW;
+    private Context context;
+
+    final void setContext(Context context) {
+        this.context = context;
+    }
+
+    /**
+     * don't leak context... called after an ad is shown or has errored out.
+     */
+    private void cleanupContext() {
+        if (context != null) {
+            TapItLog.v(TAG, "releasing Context reference");
+            context = null;
+        }
+    }
 
     /**
      * moves to the next state, if particular state transition is allowed.  If
@@ -25,6 +44,10 @@ public abstract class AbstractStatefulAd {
     protected boolean ratchetState(State newState) {
         if (newState.compareTo(state) > 0) {
             state = newState;
+
+            if (state.compareTo(State.SHOWN) >= 0) {
+                cleanupContext();
+            }
             return true;
         }
         TapItLog.d(TAG, "Invalid state transition: " + state + " -> " + newState);
@@ -59,7 +82,7 @@ public abstract class AbstractStatefulAd {
      * fill this in w/ the actual ad show behavior, such as displaying ad view,
      * or popping up an activity.
      */
-    public abstract void doShow();
+    public abstract void doShow(Context context);
 
     public void show() {
         switch (state) {
@@ -73,9 +96,8 @@ public abstract class AbstractStatefulAd {
                 break;
 
             case LOADED:
-                doShow();
+                doShow(context);
                 ratchetState(State.SHOWN);
-
                 break;
 
             case SHOWN:

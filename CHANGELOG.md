@@ -1,3 +1,6 @@
+2.0.4
+* Fixed activity leak
+
 2.0.3
 * Fixed misspelled vast package path
 

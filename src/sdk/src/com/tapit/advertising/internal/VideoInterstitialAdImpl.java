@@ -21,7 +21,6 @@ public class VideoInterstitialAdImpl extends AbstractStatefulAd implements TapIt
 
     private static final String TAG = "TapIt";
 
-    private final Context context;
     private final TapItAdRequest adRequest;
     private final TVASTAdsLoader videoLoader;
     private TapItVideoInterstitialAdListener listener = null;
@@ -63,9 +62,9 @@ public class VideoInterstitialAdImpl extends AbstractStatefulAd implements TapIt
             throw new NullPointerException("Ad request cannot be null");
         }
 
-        this.context = context;
+        setContext(context);
         adRequest = request;
-        metrics = this.context.getResources().getDisplayMetrics();
+        metrics = context.getResources().getDisplayMetrics();
 
         videoLoader = new TVASTAdsLoader(context);
     }
@@ -92,8 +91,7 @@ public class VideoInterstitialAdImpl extends AbstractStatefulAd implements TapIt
         videoLoader.requestAds(tvastRequest);
     }
 
-    public void doShow() {
-//        TapItLog.d(TAG, "videoImpl.show");
+    public void doShow(final Context context) {
 
         AdActivityContentWrapper wrapper = new AdActivityContentWrapper() {
 
@@ -102,6 +100,7 @@ public class VideoInterstitialAdImpl extends AbstractStatefulAd implements TapIt
             private TVASTAdView staticAdView = null;
             // stub code to enable forcing user to watch entire video
             private boolean canCloseVideo = true; // set to false to force user to watch entire video
+            private TVASTPlayer.TVASTAdPlayerListener playerListener;
 
             @Override
             public View getContentView(final TapItAdActivity activity) {
@@ -130,7 +129,7 @@ public class VideoInterstitialAdImpl extends AbstractStatefulAd implements TapIt
                 return layout;
             }
 
-            private void showClosingFrame(TapItAdActivity activity) {
+            private void showClosingFrameOrClose(TapItAdActivity activity) {
                 layout.setOnClickListener(null);
                 if (videoAdsManager.hasClosingFrame()) {
                     RelativeLayout.LayoutParams lp = (RelativeLayout.LayoutParams) staticAdView.getLayoutParams();
@@ -207,8 +206,9 @@ public class VideoInterstitialAdImpl extends AbstractStatefulAd implements TapIt
             }
 
             private VastPlayerView getVideoView(final TapItAdActivity activity) {
-                videoView = new VastPlayerView(context);
-                videoView.addCallback(new TVASTPlayer.TVASTAdPlayerListener() {
+                videoView = new VastPlayerView(activity);
+
+                playerListener = new TVASTPlayer.TVASTAdPlayerListener() {
                     @Override
                     public void onVideoClick(TVASTPlayer player) {
                         TapItLog.d(TAG, "onVideoClick");
@@ -218,10 +218,9 @@ public class VideoInterstitialAdImpl extends AbstractStatefulAd implements TapIt
                     public void onVideoComplete(TVASTPlayer player) {
                         TapItLog.d(TAG, "Video Ad Complete!");
                         canCloseVideo = true;
-                        activity.setCloseButtonVisible(true);
 
-                        showClosingFrame(activity);
-                        //TODO auto close interstitial if no closing frame ad
+                        activity.setCloseButtonVisible(true);
+                        showClosingFrameOrClose(activity);
                     }
 
                     @Override
@@ -258,7 +257,9 @@ public class VideoInterstitialAdImpl extends AbstractStatefulAd implements TapIt
                     public void onVideoVolumeChanged(TVASTPlayer player, int volume) {
                         // noop
                     }
-                });
+                };
+
+                videoView.addCallback(playerListener);
 
                 return videoView;
             }
@@ -269,6 +270,9 @@ public class VideoInterstitialAdImpl extends AbstractStatefulAd implements TapIt
                 if (listener != null) {
                     listener.videoInterstitialDidClose(VideoInterstitialAdImpl.this);
                 }
+                ratchetState(State.DONE);
+                staticAdView.destroy();
+                layout.removeAllViews();
             }
 
             @Override
@@ -285,6 +289,7 @@ public class VideoInterstitialAdImpl extends AbstractStatefulAd implements TapIt
 
             @Override
             public void stopContent() {
+                videoView.stopAd();
                 TapItLog.d(TAG, "stopContent");
             }
         };
@@ -303,6 +308,7 @@ public class VideoInterstitialAdImpl extends AbstractStatefulAd implements TapIt
         if (listener != null) {
             listener.videoInterstitialDidFail(this, adErrorEvent.getError().getMessage());
         }
+        ratchetState(State.DONE);
     }
 
     @Override

@@ -13,8 +13,12 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import com.tapit.advertising.internal.TapItAdActivity;
+import com.tapit.core.TapItLog;
+
+import java.lang.ref.WeakReference;
 
 public class TVASTAdView extends WebView {
+    private static final String TAG = "TapIt";
 
     private AdViewListener m_listener;
     private boolean isFullscreen = false;
@@ -101,10 +105,10 @@ public class TVASTAdView extends WebView {
     }
 
     private class AdWebViewClient extends WebViewClient {
-        private Context context;
+        private WeakReference<Context> contextWRef;
 
         public AdWebViewClient(Context context) {
-            this.context = context;
+            this.contextWRef = new WeakReference<Context>(context);
         }
 
         @Override
@@ -120,7 +124,13 @@ public class TVASTAdView extends WebView {
             boolean isGooglePlay = isGooglePlayUrl(url);
 
             if (isGooglePlay) {
-                openUrlInExternalBrowser(context, url);
+                Context ctx = contextWRef.get();
+                if (ctx != null) {
+                    openUrlInExternalBrowser(ctx, url);
+                }
+                else {
+                    TapItLog.w(TAG, "context wasn't available, couldn't open in external browser", new Exception());
+                }
                 m_state = State.DONE;
                 return true;
             }

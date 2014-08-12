@@ -43,7 +43,7 @@ import android.widget.FrameLayout;
  * Viewer of advertising.
  */
 public abstract class AdViewCore extends WebView {
-    public static final String VERSION = "2.0.3";
+    public static final String VERSION = "2.0.4";
     public static final String TAG = "TapIt";
 
     private static final long AD_DEFAULT_RELOAD_PERIOD = 120000; // milliseconds
@@ -52,7 +52,6 @@ public abstract class AdViewCore extends WebView {
     protected WhereamiLocationListener listener;
     //    private static final long AD_STOP_CHECK_PERIOD = 10000; // milliseconds
     private Handler handler = new Handler(Looper.getMainLooper());
-    protected Context context;
     private Integer defaultImageResource;
     private Timer reloadTimer;
     protected AdRequest adRequest;
@@ -418,7 +417,6 @@ public abstract class AdViewCore extends WebView {
             String paramBG, String paramLINK,
             Map<String, String> customParameters) {
         adLog = new AdLog(this);
-        this.context = context;
         autoDetectParametersThread = new AutoDetectParametersThread(context, this);
 
         setupWebView();
@@ -453,7 +451,7 @@ public abstract class AdViewCore extends WebView {
 
         refreshDisplayMetrics();
 
-        setWebViewClient(new AdWebViewClient(context));
+        setWebViewClient(new AdWebViewClient(getContext()));
         setWebChromeClient(mWebChromeClient);
     }
         
@@ -608,7 +606,7 @@ public abstract class AdViewCore extends WebView {
 //                String videourl = null;
                 String clickurl;
                 // calc request size based on size of layout allotted
-                view.calcDimensionsForRequest(context);
+                view.calcDimensionsForRequest(getContext());
 
                 //TODO clean up this mess!
                 autoDetectParametersThread.run();
@@ -1063,7 +1061,7 @@ public abstract class AdViewCore extends WebView {
             }
         };
 
-        TapItAdActivity.startActivity(context, wrapper);
+        TapItAdActivity.startActivity(getContext(), wrapper);
     }
 
     BasicWebView setupWebView(final TapItAdActivity activity) {
@@ -1194,7 +1192,7 @@ public abstract class AdViewCore extends WebView {
     }
 
     protected void refreshDisplayMetrics() {
-        WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+        WindowManager wm = (WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE);
         wm.getDefaultDisplay().getMetrics(metrics);
     }
     /**
@@ -1217,7 +1215,7 @@ public abstract class AdViewCore extends WebView {
      */
     public boolean resize(int widthDip, int heightDip, int offsetXDip, int offsetYDip,
                        Mraid.MraidCloseRegionPosition customClosePosition, boolean allowOffscreen) {
-        WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+        WindowManager wm = (WindowManager) getContext().getSystemService(Context.WINDOW_SERVICE);
         DisplayMetrics metrics = new DisplayMetrics();
         wm.getDefaultDisplay().getMetrics(metrics);
 

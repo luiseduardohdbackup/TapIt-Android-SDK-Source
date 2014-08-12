@@ -20,17 +20,17 @@ public class VastPlayerView extends FrameLayout implements TVASTPlayer, TVASTPla
     private TextView countdownTextView = null;
 
     public VastPlayerView(Context context) {
-        super(context);
+        super(context.getApplicationContext());
         setup();
     }
 
     public VastPlayerView(Context context, AttributeSet attrs) {
-        super(context, attrs);
+        super(context.getApplicationContext(), attrs);
         setup();
     }
 
     public VastPlayerView(Context context, AttributeSet attrs, int defStyle) {
-        super(context, attrs, defStyle);
+        super(context.getApplicationContext(), attrs, defStyle);
         setup();
     }
 
@@ -67,7 +67,6 @@ public class VastPlayerView extends FrameLayout implements TVASTPlayer, TVASTPla
         videoView.requestFocus();
 
         videoView.start();
-
     }
 
     @Override
@@ -92,7 +91,6 @@ public class VastPlayerView extends FrameLayout implements TVASTPlayer, TVASTPla
 
     @Override
     public void onVideoComplete(TVASTPlayer player) {
-        //To change body of implemented methods use File | Settings | File Templates.
         countdownTextView.setText(COUNTDOWN_PREFIX + "0:00");
     }
 

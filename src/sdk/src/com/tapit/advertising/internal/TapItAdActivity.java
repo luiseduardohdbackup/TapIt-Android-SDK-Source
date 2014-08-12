@@ -1,5 +1,6 @@
 package com.tapit.advertising.internal;
 
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -118,8 +119,9 @@ public class TapItAdActivity extends Activity {
 //        TapItLog.d(TAG, "onPause");
 //    }
 
+    @TargetApi(Build.VERSION_CODES.HONEYCOMB)
     public void enableSystemUIAutoDimming() {
-        if (Build.VERSION.SDK_INT >= 11) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
             // dim the lights on newer devices
             final Handler handler = new Handler(Looper.getMainLooper());
             final Runnable dimmingRunnable = new Runnable(){

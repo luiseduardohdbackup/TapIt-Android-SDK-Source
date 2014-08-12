@@ -67,6 +67,7 @@ public final class InterstitialAdImpl extends AbstractStatefulAd implements TapI
      * Use {@link #isLoaded()} or {@link TapItInterstitialAdListener} to determine
      * when interstitial is loaded.
      */
+    @Override
     public void doLoad() {
         legacyInterstitialAd.setOnInterstitialAdDownload(this);
         legacyInterstitialAd.load();
@@ -78,11 +79,10 @@ public final class InterstitialAdImpl extends AbstractStatefulAd implements TapI
      * Use {@link #isLoaded()} or {@link TapItInterstitialAdListener} to determine when
      * interstitial is loaded.
      */
-    public void doShow() {
+    @Override
+    public void doShow(Context context) {
         legacyInterstitialAd.showInterstitial();
     }
-
-
 
 
     @Override
@@ -113,6 +113,7 @@ public final class InterstitialAdImpl extends AbstractStatefulAd implements TapI
         if (listener != null) {
             listener.interstitialDidClose(InterstitialAdImpl.this);
         }
+        ratchetState(State.DONE);
         legacyInterstitialAd.destroy();
     }
 

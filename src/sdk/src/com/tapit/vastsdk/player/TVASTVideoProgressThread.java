@@ -33,6 +33,7 @@ public class TVASTVideoProgressThread extends Thread {
     private Handler threadHandler;
 
     public TVASTVideoProgressThread(TVASTPlayer player, List<TVASTAdPlayerListener> callbacks) {
+        setName("TVASTVideoProgressThread");
         //this.video = video;
         this.mPlayer = player;
         // The callbacks list is shared with the caller, so it should only be used on the UI thread.
