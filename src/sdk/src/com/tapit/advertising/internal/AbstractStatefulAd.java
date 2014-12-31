@@ -66,11 +66,11 @@ public abstract class AbstractStatefulAd {
         }
         else if (state == State.LOADING) {
             // currently loading... do nothing
-            TapItLog.d(TAG, "Ignoring attempt to load interstitial... already loading!");
+            TapItLog.d(TAG, "Ignoring attempt to load ad... already loading!");
         }
         else {
-            // already been loaded... don't reuse interstitials!
-            TapItLog.w(TAG, "Ignoring attempt to re-load interstitial.");
+            // already been loaded... don't reuse ads!
+            TapItLog.w(TAG, "Ignoring attempt to re-load ad.");
         }
     }
 
@@ -91,7 +91,7 @@ public abstract class AbstractStatefulAd {
                 load();
                 // fall through
             case LOADING:
-                // mark to display as soon as interstitial is rdy
+                // mark to display as soon as ad is rdy
                 showImmediately = true;
                 break;
 
@@ -103,7 +103,7 @@ public abstract class AbstractStatefulAd {
             case SHOWN:
             case DONE:
             default:
-                TapItLog.w(TAG, "Ignoring attempt to re-use interstitial.");
+                TapItLog.w(TAG, "Ignoring attempt to re-use ad.");
                 break;
         }
 

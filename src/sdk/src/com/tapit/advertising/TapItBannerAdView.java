@@ -10,7 +10,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.view.WindowManager;
-import com.tapit.advertising.internal.AdRequestImpl;
+import com.tapit.advertising.internal.*;
 import com.tapit.adview.AdRequest;
 import com.tapit.adview.AdView;
 import com.tapit.adview.AdViewCore;
@@ -103,7 +103,6 @@ public final class TapItBannerAdView extends ViewGroup {
      * @param zone Identifier of ad placement to be loaded.
      */
     public final void startRequestingAdsForZone(String zone) {
-//        AdRequestImpl request = new AdRequestImpl.BuilderImpl(zone).getTapItAdRequest();
         TapItAdRequest request = new AdRequestImpl.BuilderImpl(zone).getTapItAdRequest();
         startRequestingAds(request);
     }
@@ -133,10 +132,10 @@ public final class TapItBannerAdView extends ViewGroup {
         setupLegacyListener();
 
         AdRequest legacyAdRequest = AdRequestImpl.asImplAdRequest(adRequest);
-        if (latitude != 0.0) {
+        if (latitude != null) {
             legacyAdRequest.setLatitude(String.valueOf(latitude));
         }
-        if (longitude != 0.0) {
+        if (longitude != null) {
             legacyAdRequest.setLongitude(String.valueOf(longitude));
         }
         setContainerSize(legacyAdRequest);
@@ -184,6 +183,16 @@ public final class TapItBannerAdView extends ViewGroup {
             }
             legacyBannerAdView.destroy();
             legacyBannerAdView = null;
+        }
+
+        if (basicWebView != null) {
+            // clean up previous instance
+            ViewGroup parent = (ViewGroup)basicWebView.getParent();
+            if (parent != null) {
+                parent.removeView(basicWebView);
+            }
+            basicWebView.destroy();
+            basicWebView = null;
         }
     }
 
@@ -334,7 +343,7 @@ public final class TapItBannerAdView extends ViewGroup {
      * @param latitude the latitude in decimal degrees
      * @param longitude the longitude in decimal degrees
      */
-    public void updateLocation(double latitude, double longitude) {
+    public void updateLocation(Double latitude, Double longitude) {
         this.latitude = latitude;
         this.longitude = longitude;
     }
@@ -349,11 +358,12 @@ public final class TapItBannerAdView extends ViewGroup {
     private static final String TAG = "TapIt";
 
     private AdView legacyBannerAdView = null;
+    private BasicWebView basicWebView = null;
     private BannerAdListener listener = null;
     private TapItAdRequest adRequest = null;
     private int adUpdateIntervalSeconds = REFRESH_DELAY_SECONDS;
-    private double latitude;
-    private double longitude;
+    private Double latitude = null;
+    private Double longitude = null;
 
     private final Handler timerHandler = new Handler();
     private final Runnable timerRunnable = new Runnable() {
@@ -506,6 +516,41 @@ public final class TapItBannerAdView extends ViewGroup {
             int adBottom = adHeight + adTop;
 
             legacyBannerAdView.layout(adLeft, adTop, adRight, adBottom);
+        }
+
+        if (basicWebView != null) {
+            // center the ad inside the container
+
+            DisplayMetrics metrics = new DisplayMetrics();
+            WindowManager wm = (WindowManager) getContext().getSystemService(
+                    Context.WINDOW_SERVICE);
+
+            wm.getDefaultDisplay().getMetrics(metrics);
+            float mDensity = metrics.density;
+
+
+            int containerWidth = r - l;
+            int containerHeight = b - t;
+
+            int adWidth = 320;
+            int adHeight = 50;
+
+            if (adWidth <= 0 || adHeight <= 0) {
+                // server didn't specify an ad size, just default to container size
+                adWidth = containerWidth;
+                adHeight = containerHeight;
+            }
+            else {
+                adWidth = (int)(adWidth * mDensity + 0.5);
+                adHeight = (int)(adHeight * mDensity + 0.5);
+            }
+
+            int adLeft = (containerWidth - adWidth) / 2;
+            int adTop = (containerHeight - adHeight) / 2;
+            int adRight = adWidth + adLeft;
+            int adBottom = adHeight + adTop;
+
+            basicWebView.layout(adLeft, adTop, adRight, adBottom);
         }
     }
 }

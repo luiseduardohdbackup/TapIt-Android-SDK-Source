@@ -33,6 +33,9 @@ public interface TapItAdRequest {
      */
     public PlacementType getPlacementType();
 
+    /**
+     * List of keywords or EmptyList if no keywords
+     */
     public List<String> getKeywords();
 
     public boolean isTestMode();

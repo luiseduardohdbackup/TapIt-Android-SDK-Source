@@ -116,6 +116,43 @@ public final class TapItAdvertising {
 
 
     /*******************************************************
+     * TapItNativeAd factory methods
+     *******************************************************/
+
+
+    /**
+     * Factory method which generates a native ad object.
+     * @param context Application context that will be used to build a native ad
+     * @param zone Identifier of ad placement to be loaded.
+     * @return A native ad object that is ready to be loaded.
+     *         Call {@link TapItNativeAd#load()} to initiate ad request.
+     * @see TapItNativeAd
+     */
+    public TapItNativeAd getNativeAdForZone(Context context, String zone) {
+        return NativeAdImpl.getNativeAdForZone(context, zone);
+    }
+
+    /**
+     * Factory method which generates a native ad object.
+     * @param context Application context that will be used to build a native ad
+     * @param request Request object used to hold request configuration details.
+     * @return A native ad object that is ready to be loaded.
+     *         Call {@link TapItNativeAd#load()} to initiate ad request.
+     * @see TapItNativeAd
+     */
+    public TapItNativeAd getNativeAd(Context context, TapItAdRequest request) {
+        return NativeAdImpl.getNativeAd(context, request);
+    }
+
+    /**
+     * Factory method with produces a native ad loader object.
+     */
+    public TapItAdLoader<TapItNativeAd> getNativeAdLoader() {
+        return new NativeAdLoader();
+    }
+
+
+    /*******************************************************
      * TapItAdPrompt factory methods
      *******************************************************/
 

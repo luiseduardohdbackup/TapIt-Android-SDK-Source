@@ -1,7 +1,7 @@
 TapIt Android SDK
 =================
 
-Version 2.0.4
+Version 2.1.0
 
 This is the Android SDK for the TapIt! mobile ad network. Go to http://tapit.com/ for more details and to sign up.
 
@@ -50,6 +50,108 @@ See [AndroidManifest.xml](https://github.com/tapit/TapIt-Android-SDK-Source/blob
 **NOTE:** Zones correspond to a specific ad type, which is specified through the TapIt dashboard.  Please ensure that you use the correct Zone ID for your ad units or you may experience un-expected results.
 
 A sample project is included in this repo.  See [Example Code](https://github.com/tapit/TapIt-Android-SDK-Source/tree/master/src/example) for a live demo.
+
+
+Native Ad Usage
+---------------
+Native ads are advertisments that are designed to fit naturally into your app's look and feel.  Pre-defined ad features
+are provided as a JSON payload which your app consumes in a template that follows your UI's theme.
+
+*Example Code Usage*
+````java
+import com.tapit.advertising.*;
+
+// ...
+
+String zoneId = "YOUR_NATIVE_AD_ZONE_ID";
+TapItNativeAd nativeAd = TapItAdvertising.get().getNativeAdForZone(context, zoneId);
+nativeAd.setListener(new TapItNativeAd.TapItNativeAdListener() {
+    @Override
+    public void nativeAdDidLoad(TapItNativeAd nativeAd) {
+        try {
+            renderUiFromNativeAd(nativeAd);
+
+        } catch (JSONException e) {
+            // log error and discard this native ad instance
+        }
+    }
+
+    @Override
+    public void nativeAdDidFail(TapItNativeAd nativeAd, String errMsg) {
+        // The ad failed to load, errMsg describes why.
+        // Error messages are not intended to be displayed to the user
+    }
+});
+
+nativeAd.load();
+
+
+// ...
+
+
+// ... when native ad data is displayed on screen:
+nativeAd.trackImpression();
+
+
+// ...
+
+
+// ... when native ad is clicked:
+nativeAd.click(context);
+````
+
+````java
+
+private void renderUiFromNativeAd(TapItNativeAd nativeAd) throws JSONException {
+    JSONObject json = new JSONObject(nativeAd.getAdData());
+    String adtitle = json.optString("adtitle");
+    String imageurl = json.optString("iconurl");
+    double stars = json.optDouble("rating");
+    String html = json.optString("html");
+    String adtext = json.optString("adtext");
+    String cta = json.optString("cta");
+
+    // use the data to build a view item of your own design...
+}
+````
+
+To request multiple ads at once:
+````java
+String zoneId = "YOUR_NATIVE_AD_ZONE_ID";
+TapItAdRequest request = TapItAdvertising.get().getAdRequestForZone(zoneId);
+
+TapItAdvertising.get().getNativeAdLoader();
+int numberOfAdsToLoad = 10;
+TapItAdLoader<TapItNativeAd> adLoader = TapItAdvertising.get().getNativeAdLoader();
+
+adLoader.multiLoad(context, request, numberOfAdsToLoad,
+        new TapItAdLoader.TapItAdLoaderListener<TapItNativeAd>() {
+            @Override
+            public void onSuccess(TapItAdLoader adLoader, List<TapItNativeAd> nativeAdsList) {
+                for(TapItNativeAd nativeAd : nativeAdsList) {
+                    // use the native ad to build a view item, ...
+                    try {
+                        renderUiFromNativeAd(nativeAd);
+                    } catch (JSONException e) {
+                        // log error and discard this native ad instance
+                    }
+                }
+            }
+
+            @Override
+            public void onFail(TapItAdLoader adLoader, String errMsg) {
+                // no ads returned, errMsg describes why.
+                // Error messages are not intended to be displayed to the user
+            }
+        }
+);
+````
+
+Code samples and advanced implementation can be found in the 
+[Native Ad Example Code](https://github.com/tapit/TapIt-Android-SDK-Source/blob/master/src/nativeads-example/app/src/main/java/com/yourcompany/nativeadsexample/MainActivity.java)
+
+Gradle project:
+[Native Ad Example Project](https://github.com/tapit/TapIt-Android-SDK-Source/blob/master/src/nativeads-example/)
 
 
 Banner Usage

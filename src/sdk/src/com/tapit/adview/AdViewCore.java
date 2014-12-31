@@ -92,6 +92,15 @@ public abstract class AdViewCore extends WebView {
     private TapItAdActivity mraidExpandedActivity = null;
 
     private final DisplayMetrics metrics = new DisplayMetrics();
+    private static boolean debugEnabled;
+
+    public static boolean isDebugEnabled() {
+        return debugEnabled;
+    }
+
+    public static void setDebugEnabled(boolean debugEnabled) {
+        AdViewCore.debugEnabled = debugEnabled;
+    }
 
     public Mraid.MraidPlacementType getMraidPlacementType() {
         return mraidPlacementType;
@@ -107,7 +116,6 @@ public abstract class AdViewCore extends WebView {
 
     private ViewState mViewState = ViewState.DEFAULT;
     private String mDataToInject = null;
-    public static final String mraidBridgePath = "http://dev.tapit.com/~npenteado/mraid/mraid.js";
     private String mContent = null;
 
     protected AdLog adLog = null;
@@ -453,6 +461,12 @@ public abstract class AdViewCore extends WebView {
 
         setWebViewClient(new AdWebViewClient(getContext()));
         setWebChromeClient(mWebChromeClient);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            if (AdViewCore.isDebugEnabled()) {
+                WebView.setWebContentsDebuggingEnabled(true);
+            }
+        }
     }
         
     /**
@@ -826,7 +840,7 @@ public abstract class AdViewCore extends WebView {
         String mraidTag = "";
         if (isMraid) {
             mraidTag = "<script type=\"text/javascript\">" +
-                    Mraid.MRAID_JS +
+                    Mraid.getMraidJs(getContext()) +
                     "</script>";
 //          mraidTag += "<script src=\"" + mraidBridgePath + "\"></script>";
         }
@@ -1052,7 +1066,7 @@ public abstract class AdViewCore extends WebView {
 
             @Override
             public void done() {
-                // noop
+                mWebView.destroy();
             }
 
             @Override
@@ -1347,26 +1361,26 @@ public abstract class AdViewCore extends WebView {
         parent.addView(altView, index, lp);
     }
 
-    /**
-     * Revert to earlier ad state
-     */
-    public void resetContents() {
-
-        FrameLayout contentView = (FrameLayout) getRootView().findViewById(
-                R.id.content);
-
-        FrameLayout placeHolder = (FrameLayout) getRootView().findViewById(
-                PLACEHOLDER_ID);
-        FrameLayout background = (FrameLayout) getRootView().findViewById(
-                BACKGROUND_ID);
-        ViewGroup parent = (ViewGroup) placeHolder.getParent();
-        background.removeView(this);
-        contentView.removeView(background);
-        resetLayout();
-        parent.addView(this, mIndex);
-        parent.removeView(placeHolder);
-        parent.invalidate();
-    }
+//    /**
+//     * Revert to earlier ad state
+//     */
+//    public void resetContents() {
+//
+//        FrameLayout contentView = (FrameLayout) getRootView().findViewById(
+//                R.id.content);
+//
+//        FrameLayout placeHolder = (FrameLayout) getRootView().findViewById(
+//                PLACEHOLDER_ID);
+//        FrameLayout background = (FrameLayout) getRootView().findViewById(
+//                BACKGROUND_ID);
+//        ViewGroup parent = (ViewGroup) placeHolder.getParent();
+//        background.removeView(this);
+//        contentView.removeView(background);
+//        resetLayout();
+//        parent.addView(this, mIndex);
+//        parent.removeView(placeHolder);
+//        parent.invalidate();
+//    }
 
         
     public void close() {
@@ -2206,6 +2220,16 @@ public abstract class AdViewCore extends WebView {
 
     void setMraidExpandedActivity(TapItAdActivity mraidExpandedActivity) {
         this.mraidExpandedActivity = mraidExpandedActivity;
+    }
+
+
+    @Override
+    protected void onSizeChanged(int w, int h, int ow, int oh) {
+        super.onSizeChanged(w, h, ow, oh);
+        TapItLog.e(TAG, String.format("onSizeChanged(%d, %d, %d, %d)", w, h, ow, oh));
+        if (mraid) {
+            syncMraidState();
+        }
     }
 
     private class AutoDetectParametersThread extends Thread {

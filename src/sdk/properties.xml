@@ -30,6 +30,7 @@
         <pathelement path="${android.jar}"/>
         <pathelement path="libs/google-play-services.jar"/>
         <pathelement path="libs/GoogleAdMobAdsSdk-6.4.1.jar"/>
+        <pathelement path="../../../../../../google-play-services_lib/libs/google-play-services.jar"/>
     </path>
 
     <fileset id="javadoc.src.pathref" dir="${src.dir}">

@@ -38,12 +38,14 @@ public class BasicWebView extends WebView {
          * of loading non http/https urls within the webview
          * @param view the web view attempting to load the url
          * @param url the url to be loaded
-         * @return true if the url was handled and should not be loaded by the
+         * @return true if the url was handled and should *NOT* be loaded by the
          *         webview.  false if you want the webview to continue loading
          *         this url.
          */
         public boolean shouldOverrideUrlLoading(BasicWebView view, String url) {
             TapItLog.d(TAG, "BasicWebView.shouldOverrideUrlLoading(" + url + ')');
+            //TODO notify any capability listeners, allow them to handle url request... e.g. MraidActivator should listen for mraid.js
+
             if (BasicWebView.isExternalUrl(url)) {
                 willLeaveApplication(view);
                 BasicWebView.openInExternalBrowser(view.getContext(), url);
@@ -64,7 +66,6 @@ public class BasicWebView extends WebView {
             }
         }
     }
-
 
     private BasicWebViewListener listener = null;
 
@@ -147,6 +148,13 @@ public class BasicWebView extends WebView {
         else {
             super.loadUrl(url);
         }
+    }
+
+    public void loadPwAdResponse(AdResponseBuilder.AdResponse response) {
+        //TODO figure out if we need AdCreativeView or if keeping the code here...
+        //TODO add a done/error callback?
+        String html = response.getAdMarkup();
+        loadData(html, "text/html", "UTF-8");
     }
 
     public static boolean isExternalUrl(String url) {

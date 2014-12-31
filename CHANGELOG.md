@@ -1,3 +1,7 @@
+2.1.0
+* Added Native Ad support
+* various bug fixes and performance improvements
+
 2.0.4
 * Fixed activity leak
 

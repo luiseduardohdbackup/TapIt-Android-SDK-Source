@@ -4,12 +4,14 @@ import android.content.Context;
 import com.tapit.advertising.TapItAdRequest;
 import com.tapit.advertising.TapItInterstitialAd;
 import com.tapit.adview.AdInterstitialView;
+import com.tapit.adview.AdRequest;
 import com.tapit.adview.AdViewCore;
 
 public final class InterstitialAdImpl extends AbstractStatefulAd implements TapItInterstitialAd, AdViewCore.OnInterstitialAdDownload {
 
     private final AdInterstitialView legacyInterstitialAd;
     private TapItInterstitialAd.TapItInterstitialAdListener listener = null;
+    private final TapItAdRequest request;
 
 
     /**
@@ -45,6 +47,8 @@ public final class InterstitialAdImpl extends AbstractStatefulAd implements TapI
         if (request == null) {
             throw new NullPointerException("Ad request cannot be null");
         }
+
+        this.request = request;
 
         legacyInterstitialAd = new AdInterstitialView(context, AdRequestImpl.asImplAdRequest(request));
     }

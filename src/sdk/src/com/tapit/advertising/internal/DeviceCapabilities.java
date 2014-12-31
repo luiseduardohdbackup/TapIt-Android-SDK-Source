@@ -3,6 +3,8 @@ package com.tapit.advertising.internal;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ResolveInfo;
+import android.os.AsyncTask;
+import android.os.Build;
 import com.google.android.gms.ads.identifier.AdvertisingIdClient;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
@@ -60,6 +62,37 @@ public final class DeviceCapabilities {
     public static boolean canCreateCalendarEvents(Context context) {
         //TODO implement me!
         return true;
+    }
+
+    public static interface AdvertisingInfoCallback {
+        public void advertisingInfoReceived(AdvertisingInfo advertisingInfo);
+    }
+
+    /**
+     * Event based method for fetching advertiser info.
+     * @param context the app contex
+     * @param callback the callback which will be notified when advertiser info is available
+     */
+    public static void fetchAdvertiserInfo(final Context context, final AdvertisingInfoCallback callback) {
+        AsyncTask<Void, Void, AdvertisingInfo> asyncTask = new AsyncTask<Void, Void, AdvertisingInfo>() {
+
+            @Override
+            protected AdvertisingInfo doInBackground(Void... voids) {
+                return getAdvertiserInfo(context);
+            }
+
+            @Override
+            protected void onPostExecute(AdvertisingInfo advertisingInfo) {
+                callback.advertisingInfoReceived(advertisingInfo);
+            }
+        };
+
+        if(Build.VERSION.SDK_INT >= 11) {
+            asyncTask.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, (Void)null);
+        }
+        else {
+            asyncTask.execute((Void)null);
+        }
     }
 
     /**
