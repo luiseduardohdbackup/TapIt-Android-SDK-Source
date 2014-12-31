@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:id="@+id/relativeLayoutNativeAdUnit">
+
+    <ImageView
+        android:id="@+id/imageViewAdIcon"
+        android:layout_width="75dp"
+        android:layout_height="75dp"
+        android:layout_alignParentLeft="true"
+        android:layout_centerInParent="true"
+        android:src="@drawable/ic_launcher"
+        android:paddingRight="10dp"
+        android:paddingTop="0dp"
+        android:layout_alignParentStart="true"
+        android:layout_margin="0dp"
+        android:layout_alignParentTop="true" />
+
+    <TextView
+        android:id="@+id/textViewAdTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:text="Ad Title"
+        android:layout_toEndOf="@+id/imageViewAdIcon"
+        android:layout_alignTop="@+id/imageViewAdIcon"
+        android:layout_marginTop="5dp" />
+
+    <WebView
+        android:id="@+id/webViewHtml"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/imageViewAdIcon"/>
+
+    <Button
+        android:id="@+id/buttonCta"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/webViewHtml"
+        android:text="Call To Action"
+        android:layout_alignParentRight="true" />
+
+    <TextView
+        android:id="@+id/textViewAdText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Brief Description of the Ad goes here."
+        android:layout_alignTop="@+id/buttonCta"
+        android:layout_alignParentStart="true"
+        android:layout_toLeftOf="@id/buttonCta" />
+
+    <RatingBar
+        android:layout_width="wrap_content"
+        android:layout_height="20dp"
+        android:id="@+id/ratingBarStars"
+        android:layout_below="@+id/textViewAdTitle"
+        android:layout_toEndOf="@+id/imageViewAdIcon"
+        android:layout_above="@+id/webViewHtml"
+        android:numStars="5" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:text="ADVERTISEMENT"
+        android:id="@+id/textView"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="5dp"
+        android:layout_marginRight="5dp"
+        android:textColor="#64323232" />
+
+</RelativeLayout>
