@@ -2,6 +2,7 @@ package com.tapit.vastsdk;
 
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.util.Log;
 import com.tapit.core.TapItLog;
 
 import java.util.ArrayList;
@@ -17,13 +18,10 @@ public class TVASTLinearAd implements Parcelable {
     private String mDuration;
     private int mSelectedMediaIndex;
     private List<TVASTMediaFile> mMediaFiles;
-    private HashMap<String, String> mTrackingEvents;
+    private HashMap<String, ArrayList<String>> mTrackingEvents;
     private String mClickThrough;
-    private String mClickThroughId;
-    private String mClickTracking;
-    private String mClickTrackingId;
-    private String mCustomClick;
-    private String mCustomClickId;
+    private ArrayList<String> mClickTracking;
+    private ArrayList<String> mCustomClick;
     private List<TVASTLinearIcon> mIcons;
 
     public String getSkipOffset() {
@@ -75,29 +73,35 @@ public class TVASTLinearAd implements Parcelable {
 
         boolean mediaFileSelected = false;
         int selectedBitrate = 0;
-
+        int selectedIndex = 0;
         for (int index = 0; index < mediaFiles.size(); index++) {
             TVASTMediaFile mediaFile = mediaFiles.get(index);
             TapItLog.d(TAG, mediaFile.getURIMediaFile());
             if (mediaFile.getMimeType().equalsIgnoreCase("video/mp4") &&
                     !mediaFile.getURIMediaFile().trim().endsWith(".m3u8") &&
-                    selectedBitrate < mediaFile.getBitrate() &&
-                    mediaFile.getBitrate() <= 1500 && mediaFile.getWidth() <= 480) {
-
-                selectedBitrate = mediaFile.getBitrate();
-                mediaFileSelected = true;
+                    mediaFile.getURIMediaFile().trim().startsWith("http") ){
+                if(selectedBitrate < mediaFile.getBitrate() &&
+                        mediaFile.getBitrate() <= 1500 && mediaFile.getWidth() <= 480){
+                    selectedBitrate = mediaFile.getBitrate();
+                    mediaFileSelected = true;
+                    selectedIndex = index;
+                } else if(mediaFile.getWidth() > 480){
+                    Log.d(TAG,"This Media URL skipped because the width is greater than 480: "+mediaFile.getURIMediaFile());
+                } else if (mediaFile.getBitrate() > 1500){
+                    Log.d(TAG,"This Media URL skipped because the bitrate is greater than 1500: "+mediaFile.getURIMediaFile());
+                }
             }
 
             if (mediaFileSelected)
-                this.setSelectedMediaIndex(index);
+                this.setSelectedMediaIndex(selectedIndex);
         }
     }
 
-    public HashMap<String, String> getTrackingEvents() {
+    public HashMap<String, ArrayList<String>> getTrackingEvents() {
         return mTrackingEvents;
     }
 
-    protected void setTrackingEvents(HashMap<String, String> trackingEvents) {
+    protected void setTrackingEvents(HashMap<String, ArrayList<String>> trackingEvents) {
         mTrackingEvents = trackingEvents;
     }
 
@@ -109,44 +113,20 @@ public class TVASTLinearAd implements Parcelable {
         mClickThrough = clickThrough;
     }
 
-    public String getClickThroughId() {
-        return mClickThroughId;
-    }
-
-    protected void setClickThroughId(String clickThroughId) {
-        mClickThroughId = clickThroughId;
-    }
-
-    public String getClickTracking() {
+    public ArrayList<String> getClickTracking() {
         return mClickTracking;
     }
 
-    protected void setClickTracking(String clickTracking) {
+    protected void setClickTracking(ArrayList<String> clickTracking) {
         mClickTracking = clickTracking;
     }
 
-    public String getClickTrackingId() {
-        return mClickTrackingId;
-    }
-
-    protected void setClickTrackingId(String clickTrackingId) {
-        mClickTrackingId = clickTrackingId;
-    }
-
-    public String getCustomClick() {
+    public ArrayList<String> getCustomClick() {
         return mCustomClick;
     }
 
-    protected void setCustomClick(String customClick) {
+    protected void setCustomClick(ArrayList<String> customClick) {
         mCustomClick = customClick;
-    }
-
-    public String getCustomClickId() {
-        return mCustomClickId;
-    }
-
-    protected void setCustomClickId(String customClickId) {
-        mCustomClickId = customClickId;
     }
 
     public List<TVASTLinearIcon> getIcons() {
@@ -163,11 +143,8 @@ public class TVASTLinearAd implements Parcelable {
         mMediaFiles = null;
         mTrackingEvents = null;
         mClickThrough = null;
-        mClickThroughId = null;
         mClickTracking = null;
-        mClickTrackingId = null;
         mCustomClick = null;
-        mCustomClickId = null;
         mIcons = null;
         mSelectedMediaIndex = -1;
     }
@@ -215,19 +192,19 @@ public class TVASTLinearAd implements Parcelable {
             linearAd.mSelectedMediaIndex = source.readInt();
             linearAd.mMediaFiles = new ArrayList<TVASTMediaFile>();
             source.readTypedList(linearAd.mMediaFiles, TVASTMediaFile.CREATOR);
-            linearAd.mTrackingEvents = new HashMap<String, String>();
+            linearAd.mTrackingEvents = new HashMap<String, ArrayList<String>>();
             int size = source.readInt();
             for (int i = 0; i < size; i++) {
                 String key = source.readString();
-                String value = source.readString();
-                linearAd.mTrackingEvents.put(key, value);
+                ArrayList<String> internalList = new ArrayList<String>();
+                source.readList(internalList,null);
+                linearAd.mTrackingEvents.put(key, internalList);
             }
             linearAd.mClickThrough = source.readString();
-            linearAd.mClickThroughId = source.readString();
-            linearAd.mClickTracking = source.readString();
-            linearAd.mClickTrackingId = source.readString();
-            linearAd.mCustomClick = source.readString();
-            linearAd.mCustomClickId = source.readString();
+            linearAd.mClickTracking = new ArrayList<String>();
+            source.readArrayList(null);
+            linearAd.mCustomClick = new ArrayList<String>();
+            source.readArrayList(null);
             linearAd.mIcons = new ArrayList<TVASTLinearIcon>();
             source.readTypedList(linearAd.mIcons, TVASTLinearIcon.CREATOR);
 
@@ -251,14 +228,11 @@ public class TVASTLinearAd implements Parcelable {
         dest.writeInt(mTrackingEvents.size());
         for (String key : mTrackingEvents.keySet()) {
             dest.writeString(key);
-            dest.writeString(mTrackingEvents.get(key));
+            dest.writeList(mTrackingEvents.get(key));
         }
         dest.writeString(mClickThrough);
-        dest.writeString(mClickThroughId);
-        dest.writeString(mClickTracking);
-        dest.writeString(mClickTrackingId);
-        dest.writeString(mCustomClick);
-        dest.writeString(mCustomClickId);
+        dest.writeList(mClickTracking);
+        dest.writeList(mCustomClick);
         dest.writeTypedList(mIcons);
     }
 }

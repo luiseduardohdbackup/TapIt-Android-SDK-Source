@@ -17,7 +17,7 @@ public class TVASTCreative implements Parcelable {
     private TVASTLinearAd mLinearAd;
     private List<TVASTNonlinearAd> mNonlinearAds;
     private List<TVASTCompanionAd> mCompanionAds;
-    private Map<String, String> mNonlinearAdsTrackingEvents;
+    private Map<String, ArrayList<String>> mNonlinearAdsTrackingEvents;
 
     public String getCreativeId() {
         return mCreativeId;
@@ -75,11 +75,11 @@ public class TVASTCreative implements Parcelable {
         mCompanionAds = companionAds;
     }
 
-    public Map<String, String> getNonlinearAdsTrackingEvents() {
+    public Map<String, ArrayList<String>> getNonlinearAdsTrackingEvents() {
         return mNonlinearAdsTrackingEvents;
     }
 
-    protected void setNonlinearAdsTrackingEvents(Map<String, String> nonlinearAdsTrackingEvents) {
+    protected void setNonlinearAdsTrackingEvents(Map<String, ArrayList<String>> nonlinearAdsTrackingEvents) {
         mNonlinearAdsTrackingEvents = nonlinearAdsTrackingEvents;
     }
 
@@ -137,12 +137,13 @@ public class TVASTCreative implements Parcelable {
             source.readTypedList(creative.mNonlinearAds, TVASTNonlinearAd.CREATOR);
             creative.mCompanionAds = new ArrayList<TVASTCompanionAd>();
             source.readTypedList(creative.mCompanionAds, TVASTCompanionAd.CREATOR);
-            creative.mNonlinearAdsTrackingEvents = new HashMap<String, String>();
+            creative.mNonlinearAdsTrackingEvents = new HashMap<String, ArrayList<String>>();
             int size = source.readInt();
             for (int i = 0; i < size; i++) {
                 String key = source.readString();
-                String value = source.readString();
-                creative.mNonlinearAdsTrackingEvents.put(key, value);
+                ArrayList<String> internalList = new ArrayList<String>();
+                source.readList(internalList,null);
+                creative.mNonlinearAdsTrackingEvents.put(key, internalList);
             }
 
             return creative;
@@ -166,7 +167,7 @@ public class TVASTCreative implements Parcelable {
         dest.writeInt(mNonlinearAdsTrackingEvents.size());
         for (String key : mNonlinearAdsTrackingEvents.keySet()) {
             dest.writeString(key);
-            dest.writeString(mNonlinearAdsTrackingEvents.get(key));
+            dest.writeList(mNonlinearAdsTrackingEvents.get(key));
         }
     }
 }

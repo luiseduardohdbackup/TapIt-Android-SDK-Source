@@ -1,3 +1,6 @@
+2.1.1
+* Various video bug fixes and performance improvements
+
 2.1.0
 * Added Native Ad support
 * various bug fixes and performance improvements

@@ -3,7 +3,9 @@ package com.tapit.vastsdk;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 public class TVASTCompanionAd implements Parcelable {
 
@@ -23,7 +25,7 @@ public class TVASTCompanionAd implements Parcelable {
     private String mAdParams;
     private boolean mAdParamsEncoded;
     private String mAltText;
-    private HashMap<String, String> mTrackingEvents;
+    private HashMap<String, ArrayList<String>> mTrackingEvents;
     private String mClickThrough;
     private String mClickTracking;
     private String mClickTrackingId;
@@ -157,11 +159,11 @@ public class TVASTCompanionAd implements Parcelable {
         mAltText = altText;
     }
 
-    public HashMap<String, String> getTrackingEvents() {
+    public HashMap<String, ArrayList<String>> getTrackingEvents() {
         return mTrackingEvents;
     }
 
-    protected void setTrackingEvents(HashMap<String, String> trackingEvents) {
+    protected void setTrackingEvents(HashMap<String, ArrayList<String>> trackingEvents) {
         mTrackingEvents = trackingEvents;
     }
 
@@ -265,12 +267,13 @@ public class TVASTCompanionAd implements Parcelable {
             companion.mAdParams = source.readString();
             companion.mAdParamsEncoded = source.readInt() == 1;
             companion.mAltText = source.readString();
-            companion.mTrackingEvents = new HashMap<String, String>();
+            companion.mTrackingEvents = new HashMap<String, ArrayList<String>>();
             int size = source.readInt();
             for (int i = 0; i < size; i++) {
                 String key = source.readString();
-                String value = source.readString();
-                companion.mTrackingEvents.put(key, value);
+                ArrayList<String> internalList = new ArrayList<String>();
+                source.readList(internalList,null);
+                companion.mTrackingEvents.put(key, internalList);
             }
             companion.mClickThrough = source.readString();
             companion.mClickTracking = source.readString();
@@ -306,7 +309,7 @@ public class TVASTCompanionAd implements Parcelable {
         dest.writeInt(mTrackingEvents.size());
         for (String key : mTrackingEvents.keySet()) {
             dest.writeString(key);
-            dest.writeString(mTrackingEvents.get(key));
+            dest.writeList(mTrackingEvents.get(key));
         }
         dest.writeString(mClickThrough);
         dest.writeString(mClickTracking);

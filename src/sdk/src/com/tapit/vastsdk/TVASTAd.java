@@ -26,15 +26,17 @@ public class TVASTAd implements Parcelable {
     private String mAdvertiser;
     private String mSurveyURI;
     private String mErrorURI;
-    private HashMap<String, String> mImpressions;
+    private ArrayList<String> mImpressions;
     private ArrayList<TVASTCreative> mCreatives;
     private double mDuration;
 
+    private boolean mBrokenWrapperResponse;
     public TVASTAd() {
         mIs3rdPartyAd = false;
         mMediaFileIndex = -1;
         mMediaUrl = "";
         mDuration = 0;
+        mBrokenWrapperResponse = false;
     }
 
     public TVASTAdType getAdType() {
@@ -93,6 +95,12 @@ public class TVASTAd implements Parcelable {
         mMediaUrl = mediaUrl;
     }
 
+    public boolean isValidMediaUrl(){
+        if(mMediaUrl != null && mMediaUrl.length()>0 && mMediaUrl.startsWith("http")){
+            return true;
+        }
+        return false;
+    }
     public int getMediaFileIndex() {
         return mMediaFileIndex;
     }
@@ -157,11 +165,11 @@ public class TVASTAd implements Parcelable {
         mErrorURI = errorURI;
     }
 
-    public HashMap<String, String> getImpressions() {
+    public ArrayList<String> getImpressions() {
         return mImpressions;
     }
 
-    protected void setImpressions(HashMap<String, String> impressions) {
+    protected void setImpressions(ArrayList<String> impressions) {
         mImpressions = impressions;
     }
 
@@ -179,6 +187,14 @@ public class TVASTAd implements Parcelable {
 
     protected void setDuration(double duration) {
         mDuration = duration;
+    }
+
+    public boolean ismBrokenWrapperResponse() {
+        return mBrokenWrapperResponse;
+    }
+
+    public void setmBrokenWrapperResponse(boolean mBrokenWrapperResponse) {
+        this.mBrokenWrapperResponse = mBrokenWrapperResponse;
     }
 
     @Override
@@ -231,16 +247,12 @@ public class TVASTAd implements Parcelable {
             trmaAd.mAdvertiser = source.readString();
             trmaAd.mSurveyURI = source.readString();
             trmaAd.mErrorURI = source.readString();
-            trmaAd.mImpressions = new HashMap<String, String>();
-            int size = source.readInt();
-            for (int i = 0; i < size; i++) {
-                String key = source.readString();
-                String value = source.readString();
-                trmaAd.mImpressions.put(key, value);
-            }
+            trmaAd.mImpressions = new ArrayList<String>();
+            source.readArrayList(null);
             trmaAd.mCreatives = new ArrayList<TVASTCreative>();
             source.readTypedList(trmaAd.mCreatives, TVASTCreative.CREATOR);
             trmaAd.mDuration = source.readFloat();
+            trmaAd.mBrokenWrapperResponse = source.readInt() == 1;
             return trmaAd;
         }
     };
@@ -267,13 +279,10 @@ public class TVASTAd implements Parcelable {
         dest.writeString(mAdvertiser);
         dest.writeString(mSurveyURI);
         dest.writeString(mErrorURI);
-        dest.writeInt(mImpressions.size());
-        for (String key : mImpressions.keySet()) {
-            dest.writeString(key);
-            dest.writeString(mImpressions.get(key));
-        }
+        dest.writeList(mImpressions);
         dest.writeTypedList(mCreatives);
         dest.writeDouble(mDuration);
+        dest.writeInt(mBrokenWrapperResponse ? 1 : 0);
     }
 }
 

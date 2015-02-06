@@ -216,7 +216,13 @@ public class Utils {
         }
         return Integer.valueOf(res);
     }
-
+    public static int parseIntWithDefault(String number, int defaultVal) {
+        try {
+            return Integer.parseInt(number);
+        } catch (NumberFormatException e) {
+            return defaultVal;
+        }
+    }
     public static boolean hasPermission(Context context, String permission) {
         PackageManager pm = context.getPackageManager();
         int result = pm.checkPermission(permission, context.getPackageName());

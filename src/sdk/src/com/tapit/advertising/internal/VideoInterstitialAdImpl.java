@@ -119,8 +119,10 @@ public class VideoInterstitialAdImpl extends AbstractStatefulAd implements TapIt
                 videoView.setOnTouchListener(new View.OnTouchListener() {
                     @Override
                     public boolean onTouch(View v, MotionEvent event) {
+                        if(event.getAction() == MotionEvent.ACTION_UP){
 //                        TapItLog.d(TAG, "AdActivityContentWrapper -> videoView -> layout.onTouch");
-                        showAdClickDestination();
+                            showAdClickDestination();
+                        }
 
                         return true;
                     }
@@ -170,6 +172,7 @@ public class VideoInterstitialAdImpl extends AbstractStatefulAd implements TapIt
                     staticAdView.setLayoutParams(lp);
                     staticAdView.requestLayout();
                     videoAdsManager.loadDestinationUrl(staticAdView);
+                    videoAdsManager.triggerPostBacks();
                     staticAdView.bringToFront();
                     staticAdView.setVisibility(View.VISIBLE);
                     videoView.setVisibility(View.GONE);

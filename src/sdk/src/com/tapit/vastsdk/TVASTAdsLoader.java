@@ -3,8 +3,10 @@ package com.tapit.vastsdk;
 import android.content.Context;
 import android.graphics.Rect;
 import android.os.AsyncTask;
+import android.util.Log;
 import android.util.Xml;
 import android.webkit.WebView;
+import com.tapit.adview.Utils;
 import com.tapit.core.TapItLog;
 import com.tapit.vastsdk.TVASTAdError.AdErrorCode;
 import com.tapit.vastsdk.TVASTAdError.AdErrorType;
@@ -59,12 +61,18 @@ public class TVASTAdsLoader {
     protected class VASTParser {
 
         private double parseTimeString(String timeString) {
+            if(timeString == null)
+                return 0;
             String[] times = timeString.split(":");
             if (times.length == 3) {
-                double timeInSeconds = Integer.parseInt(times[0]) * 3600 +
-                        Integer.parseInt(times[1]) * 60 +
-                        Integer.parseInt(times[2]);
-                return timeInSeconds;
+                try {
+                    double timeInSeconds = Integer.parseInt(times[0]) * 3600 +
+                            Integer.parseInt(times[1]) * 60 +
+                            Integer.parseInt(times[2]);
+                    return timeInSeconds;
+                } catch (Exception e) {
+                    Log.e(TAG,"Error parsing timestamp. "+e.getMessage() );
+                }
             }
             return 0;
         }
@@ -102,6 +110,7 @@ public class TVASTAdsLoader {
 
                 if (!hasContents) {
                     mRootErrorUri = "No creatives available";
+                    trmaAd.setmBrokenWrapperResponse(true);
                 }
             } finally {
                 inStream.close();
@@ -190,11 +199,11 @@ public class TVASTAdsLoader {
                     String errorUri = readText(parser);
                     theAd.setErrorURI(errorUri);
                 } else if (name.equals("Impression")) {
-                    String impressionId = parser.getAttributeValue(namespace, "id");
                     String impressionUri = readText(parser);
-                    HashMap<String, String> impressions = new HashMap<String, String>();
-                    impressions.put(impressionId, impressionUri);
-                    theAd.setImpressions(impressions);
+                    if(theAd.getImpressions() == null){
+                        theAd.setImpressions(new ArrayList<String>());
+                    }
+                    theAd.getImpressions().add(impressionUri);
                 } else if (name.equals("Creatives")) {
                     ArrayList<TVASTCreative> creatives = readCreatives(parser, theAd.getCreatives());
                     theAd.setCreatives(creatives);
@@ -238,11 +247,11 @@ public class TVASTAdsLoader {
                     String errorUri = readText(parser);
                     theAd.setErrorURI(errorUri);
                 } else if (name.equals("Impression")) {
-                    String impressionId = parser.getAttributeValue(namespace, "id");
                     String impressionUri = readText(parser);
-                    HashMap<String, String> impressions = new HashMap<String, String>();
-                    impressions.put(impressionId, impressionUri);
-                    theAd.setImpressions(impressions);
+                    if(theAd.getImpressions() == null){
+                        theAd.setImpressions(new ArrayList<String>());
+                    }
+                    theAd.getImpressions().add(impressionUri);
                 } else if (name.equals("Creatives")) {
                     ArrayList<TVASTCreative> creatives = readCreatives(parser, theAd.getCreatives());
                     theAd.setCreatives(creatives);
@@ -268,17 +277,20 @@ public class TVASTAdsLoader {
                 if (name.equals("Creative")) {
 
                     String creativeId = parser.getAttributeValue(namespace, "id");
-                    String sequence = parser.getAttributeValue(namespace, "sequence");
+//                    String sequence = parser.getAttributeValue(namespace, "sequence");
                     String adId = parser.getAttributeValue(namespace, "adID");
                     String apiFramework = parser.getAttributeValue(namespace, "apiFramework");
 
-                    int iSequence = Integer.parseInt(sequence);
+//                    int iSequence = Integer.parseInt(sequence);
                     TVASTCreative creative = (creatives == null || creatives.size() <= i || creatives.get(i) == null) ? new TVASTCreative()
                             : creatives.get(i);
-                    creative.setAdId(adId);
-                    creative.setSequence(iSequence);
-                    creative.setCreativeId(creativeId);
-                    creative.setAPIFramework(apiFramework);
+                    if(adId != null)
+                        creative.setAdId(adId);
+//                    creative.setSequence(iSequence);
+                    if(creativeId!=null)
+                        creative.setCreativeId(creativeId);
+                    if(apiFramework!=null)
+                        creative.setAPIFramework(apiFramework);
 
                     while (parser.next() != XmlPullParser.END_TAG) {
                         if (parser.getEventType() != XmlPullParser.START_TAG) {
@@ -296,7 +308,7 @@ public class TVASTAdsLoader {
                             List<TVASTNonlinearAd> nonLinearAds = readNonLinearAds(parser);
 
                             TVASTNonlinearAd theEmptyNonlinear = nonLinearAds.get(nonLinearAds.size() - 1);
-                            Map<String, String> nonLinearTrackingEvents = theEmptyNonlinear.getTrackingEvents();
+                            Map<String, ArrayList<String>> nonLinearTrackingEvents = theEmptyNonlinear.getTrackingEvents();
                             if (nonLinearTrackingEvents != null) {
                                 creative.setNonlinearAdsTrackingEvents(nonLinearTrackingEvents);
                                 nonLinearAds.remove(theEmptyNonlinear);
@@ -343,9 +355,10 @@ public class TVASTAdsLoader {
                     theLinearAd.setDuration(duration);
                 } else if (name.equals("MediaFiles")) {
                     List<TVASTMediaFile> mediaFiles = readMediaFiles(parser);
-                    theLinearAd.setMediaFiles(mediaFiles);
+                    if(mediaFiles!=null && mediaFiles.size()>0)
+                        theLinearAd.setMediaFiles(mediaFiles);
                 } else if (name.equals("TrackingEvents")) {
-                    HashMap<String, String> trackingEvents = readTrackingEvents(parser, theLinearAd.getTrackingEvents());
+                    HashMap<String, ArrayList<String>> trackingEvents = readTrackingEvents(parser, theLinearAd.getTrackingEvents());
                     theLinearAd.setTrackingEvents(trackingEvents);
                 } else if (name.equals("VideoClicks")) {
                     // VAST Template is ambiguous of these VideoClicks.
@@ -358,18 +371,19 @@ public class TVASTAdsLoader {
                         if (innerName.equals("ClickThrough")) {
                             String clickId = parser.getAttributeValue(namespace, "id");
                             String clickThrough = readText(parser);
-                            theLinearAd.setClickThroughId(clickId);
                             theLinearAd.setClickThrough(clickThrough);
                         } else if (innerName.equals("ClickTracking")) {
-                            String clickId = parser.getAttributeValue(namespace, "id");
                             String clickTracking = readText(parser);
-                            theLinearAd.setClickTrackingId(clickId);
-                            theLinearAd.setClickTracking(clickTracking);
+                            if(theLinearAd.getClickTracking() == null){
+                                theLinearAd.setClickTracking(new ArrayList<String>());
+                            }
+                            theLinearAd.getClickTracking().add(clickTracking);
                         } else if (innerName.equals("CustomClick")) {
-                            String clickId = parser.getAttributeValue(namespace, "id");
                             String customClick = readText(parser);
-                            theLinearAd.setCustomClickId(clickId);
-                            theLinearAd.setCustomClick(customClick);
+                            if(theLinearAd.getCustomClick() == null){
+                                theLinearAd.setCustomClick(new ArrayList<String>());
+                            }
+                            theLinearAd.getCustomClick().add(customClick);
                         } else {
                             skip(parser);
                         }
@@ -387,7 +401,6 @@ public class TVASTAdsLoader {
         private List<TVASTMediaFile> readMediaFiles(XmlPullParser parser) throws XmlPullParserException, IOException {
 
             ArrayList<TVASTMediaFile> mediaFiles = new ArrayList<TVASTMediaFile>();
-            int selectedBitrate = 0;
 
             while (parser.next() != XmlPullParser.END_TAG) {
                 if (parser.getEventType() != XmlPullParser.START_TAG) {
@@ -401,13 +414,13 @@ public class TVASTAdsLoader {
                     String delivery = parser.getAttributeValue(namespace, "delivery");
                     String type = parser.getAttributeValue(namespace, "type");
                     String bitrate = parser.getAttributeValue(namespace, "bitrate");
-                    String minBitrate = parser.getAttributeValue(namespace, "minBitrate");
-                    String maxBitrate = parser.getAttributeValue(namespace, "maxBitrate");
+//                    String minBitrate = parser.getAttributeValue(namespace, "minBitrate");
+//                    String maxBitrate = parser.getAttributeValue(namespace, "maxBitrate");
                     String width = parser.getAttributeValue(namespace, "width");
                     String height = parser.getAttributeValue(namespace, "height");
                     String scalable = parser.getAttributeValue(namespace, "scalable");
-                    String maintainAspectRatio = parser.getAttributeValue(namespace, "maintainAspectRatio");
-                    String codec = parser.getAttributeValue(namespace, "codec");
+//                    String maintainAspectRatio = parser.getAttributeValue(namespace, "maintainAspectRatio");
+//                    String codec = parser.getAttributeValue(namespace, "codec");
                     String apiFramework = parser.getAttributeValue(namespace, "apiFramework");
                     String mediaFileUri = readText(parser);
 
@@ -415,7 +428,7 @@ public class TVASTAdsLoader {
                     mediaFile.setFileId(fileId);
                     mediaFile.setIsStreaming(delivery.equalsIgnoreCase("streaming"));
                     mediaFile.setMimeType(type);
-                    mediaFile.setBitrate(Integer.parseInt(bitrate));
+                    mediaFile.setBitrate(Utils.parseIntWithDefault(bitrate, 0));
                     mediaFile.setWidth(Integer.parseInt(width));
                     mediaFile.setHeight(Integer.parseInt(height));
                     mediaFile.setScalable(Boolean.parseBoolean(scalable));
@@ -430,9 +443,9 @@ public class TVASTAdsLoader {
             return mediaFiles;
         }
 
-        private HashMap<String, String> readTrackingEvents(XmlPullParser parser, HashMap<String, String> trackings) throws XmlPullParserException, IOException {
+        private HashMap<String, ArrayList<String>> readTrackingEvents(XmlPullParser parser, HashMap<String, ArrayList<String>> trackings) throws XmlPullParserException, IOException {
 
-            HashMap<String, String> trackingEvents = (trackings == null) ? new HashMap<String, String>() : trackings;
+            HashMap<String, ArrayList<String>> trackingEvents = (trackings == null) ? new HashMap<String, ArrayList<String>>() : trackings;
 
             while (parser.next() != XmlPullParser.END_TAG) {
                 if (parser.getEventType() != XmlPullParser.START_TAG) {
@@ -443,7 +456,14 @@ public class TVASTAdsLoader {
                 if (name.equals("Tracking")) {
                     String event = parser.getAttributeValue(namespace, "event");
                     String trackingUri = readText(parser);
-                    trackingEvents.put(event, trackingUri);
+                    ArrayList<String> trackingURIByEventList = null;
+                    if(trackingEvents.containsKey(event)){
+                        trackingURIByEventList = trackingEvents.get(event);
+                    }else{
+                        trackingURIByEventList = new ArrayList<String>();
+                    }
+                    trackingURIByEventList.add(trackingUri);
+                    trackingEvents.put(event, trackingURIByEventList);
                 } else {
                     skip(parser);
                 }
@@ -561,10 +581,10 @@ public class TVASTAdsLoader {
                     String id = parser.getAttributeValue(namespace, "id");
                     String width = parser.getAttributeValue(namespace, "width");
                     String height = parser.getAttributeValue(namespace, "height");
-                    String assetWidth = parser.getAttributeValue(namespace, "assetWidth");
-                    String assetHeight = parser.getAttributeValue(namespace, "assetHeight");
-                    String expndWidth = parser.getAttributeValue(namespace, "expandedWidth");
-                    String expndHeight = parser.getAttributeValue(namespace, "expandedHeight");
+//                    String assetWidth = parser.getAttributeValue(namespace, "assetWidth");
+//                    String assetHeight = parser.getAttributeValue(namespace, "assetHeight");
+//                    String expndWidth = parser.getAttributeValue(namespace, "expandedWidth");
+//                    String expndHeight = parser.getAttributeValue(namespace, "expandedHeight");
                     String adSlotId = parser.getAttributeValue(namespace, "adSlotID");
                     String apiFramework = parser.getAttributeValue(namespace, "apiFramework");
 
@@ -573,10 +593,10 @@ public class TVASTAdsLoader {
                     theCompanion.setCompId(id);
                     theCompanion.setWidth(Integer.parseInt(width));
                     theCompanion.setHeight(Integer.parseInt(height));
-                    theCompanion.setAssetWidth(Integer.parseInt(assetWidth));
-                    theCompanion.setAssetHeight(Integer.parseInt(assetHeight));
-                    theCompanion.setExpandedWidth(Integer.parseInt(expndWidth));
-                    theCompanion.setExpandedHeight(Integer.parseInt(expndHeight));
+//                    theCompanion.setAssetWidth(Integer.parseInt(assetWidth));
+//                    theCompanion.setAssetHeight(Integer.parseInt(assetHeight));
+//                    theCompanion.setExpandedWidth(Integer.parseInt(expndWidth));
+//                    theCompanion.setExpandedHeight(Integer.parseInt(expndHeight));
                     theCompanion.setAdSlotId(adSlotId);
                     theCompanion.setAPIFramework(apiFramework);
 
@@ -615,7 +635,7 @@ public class TVASTAdsLoader {
                             theCompanion.setClickTracking(clickTracking);
                             theCompanion.setClickTrackingId(clickId);
                         } else if (innername.equals("TrackingEvents")) {
-                            HashMap<String, String> trackingEvents = readTrackingEvents(parser, theCompanion.getTrackingEvents());
+                            HashMap<String, ArrayList<String>> trackingEvents = readTrackingEvents(parser, theCompanion.getTrackingEvents());
                             theCompanion.setTrackingEvents(trackingEvents);
                         } else {
                             skip(parser);
@@ -647,8 +667,8 @@ public class TVASTAdsLoader {
                     String id = parser.getAttributeValue(namespace, "id");
                     String width = parser.getAttributeValue(namespace, "width");
                     String height = parser.getAttributeValue(namespace, "height");
-                    String expndWidth = parser.getAttributeValue(namespace, "expandedWidth");
-                    String expndHeight = parser.getAttributeValue(namespace, "expandedHeight");
+//                    String expndWidth = parser.getAttributeValue(namespace, "expandedWidth");
+//                    String expndHeight = parser.getAttributeValue(namespace, "expandedHeight");
                     String scalable = parser.getAttributeValue(namespace, "scalable");
                     String maintainAspectRatio = parser.getAttributeValue(namespace, "maintainAspectRatio");
                     String minDuration = parser.getAttributeValue(namespace, "minSuggestedDuration");
@@ -658,8 +678,8 @@ public class TVASTAdsLoader {
                     theNonlinear.setAdId(id);
                     theNonlinear.setWidth(Integer.parseInt(width));
                     theNonlinear.setHeight(Integer.parseInt(height));
-                    theNonlinear.setExpandedWidth(Integer.parseInt(expndWidth));
-                    theNonlinear.setExpandedHeight(Integer.parseInt(expndHeight));
+//                    theNonlinear.setExpandedWidth(Integer.parseInt(expndWidth));
+//                    theNonlinear.setExpandedHeight(Integer.parseInt(expndHeight));
                     theNonlinear.setScalable(Boolean.parseBoolean(scalable));
                     theNonlinear.setKeepAspectRatio(Boolean.parseBoolean(maintainAspectRatio));
                     theNonlinear.setMinDuration(minDuration);
@@ -702,7 +722,7 @@ public class TVASTAdsLoader {
                     }
                     nonlinearAds.add(theNonlinear);
                 } else if (name.equals("TrackingEvents")) {
-                    HashMap<String, String> trackingEvents = readTrackingEvents(parser, null);
+                    HashMap<String, ArrayList<String>> trackingEvents = readTrackingEvents(parser, null);
                     if (trackingEvents != null) {
                         TVASTNonlinearAd theNonlinear = new TVASTNonlinearAd();
                         theNonlinear.setTrackingEvents(trackingEvents);
@@ -760,6 +780,8 @@ public class TVASTAdsLoader {
                 return e;
             } catch (XmlPullParserException e) {
                 return e;
+            } catch (Exception e) {
+                return e;
             }
         }
 
@@ -793,6 +815,9 @@ public class TVASTAdsLoader {
                     message = ((IOException) result).toString();
 
                 adError = new TVASTAdError(AdErrorType.LOAD, AdErrorCode.VAST_LOAD_TIMEOUT, message);
+            } else if (result instanceof Exception) {
+                TapItLog.d(TAG, "Exception: " , ((Exception) result));
+                adError = new TVASTAdError(AdErrorType.LOAD, AdErrorCode.UNKNOWN_ERROR, "Unknown error occurred.");
             }
 
             if (adError != null) {
@@ -814,13 +839,21 @@ public class TVASTAdsLoader {
                 stream = downloadUrl(urlString);
                 trmaAd = vastParser.parseVAST(stream, trmaAd);
 
-                if (trmaAd != null && trmaAd.getIs3rdPartyAd()) {
-                    stream.close();
-                    stream = null;
+                if (trmaAd != null) {
+                    if(trmaAd.ismBrokenWrapperResponse())
+                        throw new XmlPullParserException("Not a valid wrapper response.");
+                    if(trmaAd.getIs3rdPartyAd()) {
+                        stream.close();
+                        stream = null;
 
-                    String epochTime = String.format("%d", System.currentTimeMillis() / 1000);
-                    String wrapperUri = trmaAd.getMediaUrl().replace("[timestamp]", epochTime).replace("[TIMESTAMP]", epochTime);
-                    trmaAd = loadXmlFromNetwork(wrapperUri, trmaAd);
+                        String epochTime = String.format("%d", System.currentTimeMillis() / 1000);
+                        String wrapperUri = trmaAd.getMediaUrl().replace("[timestamp]", epochTime).replace("[TIMESTAMP]", epochTime);
+                        trmaAd = loadXmlFromNetwork(wrapperUri, trmaAd);
+                    }
+                    // Make sure the returning trmAd object has a valid URL:
+                    if(!trmaAd.isValidMediaUrl()){
+                        throw new XmlPullParserException("No valid Media URL present");
+                    }
                 }
 
                 // Makes sure that the InputStream is closed after the app is

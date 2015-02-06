@@ -1,7 +1,7 @@
 TapIt Android SDK
 =================
 
-Version 2.1.0
+Version 2.1.1
 
 This is the Android SDK for the TapIt! mobile ad network. Go to http://tapit.com/ for more details and to sign up.
 
@@ -54,7 +54,7 @@ A sample project is included in this repo.  See [Example Code](https://github.co
 
 Native Ad Usage
 ---------------
-Native ads are advertisments that are designed to fit naturally into your app's look and feel.  Pre-defined ad features
+Native ads are advertisments designed to fit naturally into your app's look and feel.  Pre-defined ad features
 are provided as a JSON payload which your app consumes in a template that follows your UI's theme.
 
 *Example Code Usage*

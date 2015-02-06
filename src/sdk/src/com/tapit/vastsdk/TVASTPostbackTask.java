@@ -40,7 +40,7 @@ public class TVASTPostbackTask extends AsyncTask<Integer, Integer, Object> {
         mListener = listener;
     }
 
-    private String postbackRequest(String url) throws IOException {
+    private String postbackRequest(String url) throws Exception {
         DefaultHttpClient client = new DefaultHttpClient();
         HttpGet get = new HttpGet(url);
         HttpResponse response = client.execute(get);
@@ -76,7 +76,7 @@ public class TVASTPostbackTask extends AsyncTask<Integer, Integer, Object> {
         try {
             data = postbackRequest(mUrl);
             return data;
-        } catch (IOException e) {
+        } catch (Exception e) {
             return e;
         }
     }

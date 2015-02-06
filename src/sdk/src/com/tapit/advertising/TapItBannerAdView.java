@@ -125,6 +125,34 @@ public final class TapItBannerAdView extends ViewGroup {
      * @throws IllegalStateException if a valid {@link com.tapit.advertising.internal.AdRequestImpl}
      * was not provided earlier
      */
+    public void resumeRequestingAds_new() {
+        removeAd(); //TODO do the remove after a new ad loads
+        //TODO admanager needs to be attached to banner ad view so we can manage
+        final AdManager adManager = new AdManager(new AdManager.ResultsCallback() {
+//        final MockAdManager adManager = new MockAdManager(new MockAdManager.ResultsCallback() {
+            @Override
+            public void onSuccess(AdResponseBuilder.AdResponse response) {
+                //TODO build and attach an adview
+                basicWebView = new BasicWebView(getContext());
+                basicWebView.loadPwAdResponse(response);
+                if (listener != null) {
+                    listener.onReceiveBannerAd(TapItBannerAdView.this);
+                }
+                addView(basicWebView);
+            }
+
+            @Override
+            public void onError(String errorMsg) {
+                if(listener != null) {
+                    listener.onBannerAdError(TapItBannerAdView.this, errorMsg);
+                }
+            }
+        });
+        final AdRequestUrlBuilder requestUrlBuilder = new AdRequestUrlBuilder(adRequest, getContext());
+        requestUrlBuilder.setLocation(latitude, longitude);
+        requestUrlBuilder.setContainerDetails(320, 50, AdRequestUrlBuilder.Orientation.NONE);
+        adManager.submitRequest(getContext(), requestUrlBuilder);
+    }
     public void resumeRequestingAds() {
         removeAd();
         legacyBannerAdView = new AdView(getContext());

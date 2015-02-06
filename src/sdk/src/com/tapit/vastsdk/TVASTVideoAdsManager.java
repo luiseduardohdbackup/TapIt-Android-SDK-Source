@@ -113,7 +113,7 @@ public class TVASTVideoAdsManager implements TVASTAdPlayerListener {
             listener.onAdEvent(adEvent);
         }
 
-        Map<String, String> trackingEvents = mLinearAd.getTrackingEvents();
+        Map<String, ArrayList<String>> trackingEvents = mLinearAd.getTrackingEvents();
         String eventName;
 
         TVASTAdEventType eventType = adEvent.getEventType();
@@ -186,10 +186,10 @@ public class TVASTVideoAdsManager implements TVASTAdPlayerListener {
                 eventName = null;
         }
         if (eventName != null) {
-            String postbackUri = trackingEvents.get(eventName);
-            doPostback(postbackUri);
+            List<String> postbackUri = trackingEvents.get(eventName);
+            doPostback(postbackUri,eventName);
             postbackUri = trackingEvents.get("pw-".concat(eventName));
-            doPostback(postbackUri);
+            doPostback(postbackUri,eventName);
         }
     }
 
@@ -267,14 +267,9 @@ public class TVASTVideoAdsManager implements TVASTAdPlayerListener {
         //TVASTCreative creative = mAd.getCreatives().get(0);
         //mLinearAd = creative.getLinearAd();
 
-        for (String impressionUri : mAd.getImpressions().values()) {
-            doPostback(impressionUri);
-        }
+        doPostback(mAd.getImpressions(),"Impressions");
 
-        if (mAd.getMediaUrl().length() > 0 && mAd.getMediaUrl().startsWith("http"))
-            player.playAd(mAd.getMediaUrl());
-        else
-            player.playAd("http://d2bgg7rjywcwsy.cloudfront.net/videos/15751/113894/encoded/320_480.mp4");
+        player.playAd(mAd.getMediaUrl());
 
         return true;
     }
@@ -448,19 +443,22 @@ public class TVASTVideoAdsManager implements TVASTAdPlayerListener {
     /**
      * VideoAdPlayerCallback implementations follow:
      * @see com.tapit.vastsdk.player.TVASTPlayer.TVASTAdPlayerListener
+     * @deprecated This method is not used by VideoInterstitial. VideoInterstitial has separate
+     * methods for clicks.
      */
+    @Deprecated
     @Override
     public void onVideoClick(TVASTPlayer player) {
-        TapItLog.d(TAG, "Ad Clicked");
+//        TapItLog.d(TAG, "Ad Clicked");
         sendAdEvent(new TVASTAdEvent(TVASTAdEventType.CLICK));
         onStop();
 
         for (TVASTCreative creative : mAd.getCreatives()) {
             TVASTLinearAd linearAd = creative.getLinearAd();
 
-            String clickTrackingUri = linearAd.getClickTracking();
+            ArrayList<String> clickTrackingURIs = linearAd.getClickTracking();
             String clickThroughUri = linearAd.getClickThrough();
-            String customClickUri = linearAd.getCustomClick();
+            ArrayList<String> customClickURIs = linearAd.getCustomClick();
             String iconClickThrough = null;
             if (linearAd.getIcons() != null) {
                 TVASTLinearIcon icon = linearAd.getIcons().get(0);
@@ -479,12 +477,33 @@ public class TVASTVideoAdsManager implements TVASTAdPlayerListener {
                 }
             }
 
-            if (clickTrackingUri != null && clickTrackingUri.length() > 0) {
-                doPostback(clickTrackingUri);
+            if (clickTrackingURIs != null && clickTrackingURIs.size() > 0) {
+                doPostback(clickTrackingURIs,"Click Tracking URI");
             }
 
-            if (customClickUri != null && customClickUri.length() > 0) {
-                doPostback(customClickUri);
+            if (customClickURIs != null && customClickURIs.size() > 0) {
+                doPostback(customClickURIs,"Custom Click URI");
+            }
+        }
+    }
+    /*
+     * This method is called from VideoInterstitial to trigger all the click tracking and custom click postbacks.
+    */
+    public void triggerPostBacks(){
+        TapItLog.d(TAG, "Ad Clicked");
+        sendAdEvent(new TVASTAdEvent(TVASTAdEventType.CLICK));
+        onStop();
+        for (TVASTCreative creative : mAd.getCreatives()) {
+            TVASTLinearAd linearAd = creative.getLinearAd();
+            ArrayList<String> clickTrackingURIs = linearAd.getClickTracking();
+            ArrayList<String> customClickURIs = linearAd.getCustomClick();
+
+            if (clickTrackingURIs != null && clickTrackingURIs.size() > 0) {
+                doPostback(clickTrackingURIs,"Click Tracking URI");
+            }
+
+            if (customClickURIs != null && customClickURIs.size() > 0) {
+                doPostback(customClickURIs,"Custom Click URI");
             }
         }
     }
@@ -502,7 +521,9 @@ public class TVASTVideoAdsManager implements TVASTAdPlayerListener {
 
         sendAdEvent(new TVASTAdEvent(TVASTAdEventType.ERROR));
         String errorUri = getErrorURIForErrorCode(300);
-        doPostback(errorUri);
+        List<String> uriList = new ArrayList<String>();
+        uriList.add(errorUri);
+        doPostback(uriList,"Ad Error");
 
         onStop();
     }
@@ -578,26 +599,28 @@ public class TVASTVideoAdsManager implements TVASTAdPlayerListener {
         mVolumeLevel = volume;
     }
 
-    private void doPostback(String uri) {
-        final String postbackUri = uri;
+    private void doPostback(List<String> uris,final String uriType) {
+        if(uris != null) {
+            for (final String uri : uris) {
+                TVASTPostbackTask postbackTask = new TVASTPostbackTask(uri);
+                postbackTask.setListener(new TVASTPostbackTask.TVASTPostbackListener() {
+                    @Override
+                    public void onSuccess(String data) {
+                        TapItLog.d(TAG, "URIType: "+uriType+" Postback:" + uri + " successful.");
+                    }
 
-        TVASTPostbackTask postbackTask = new TVASTPostbackTask(uri);
-        postbackTask.setListener(new TVASTPostbackTask.TVASTPostbackListener() {
-            @Override
-            public void onSuccess(String data) {
-                TapItLog.d(TAG, "Postback:" + postbackUri + " successful.");
+                    @Override
+                    public void onFailure(Exception error) {
+                        TapItLog.d(TAG, "URIType: "+uriType+" Postback:" + uri + " failed.");
+                        TVASTAdError adError = new TVASTAdError(AdErrorType.PLAY, AdErrorCode.VAST_INVALID_URL, error.getMessage());
+                        TVASTAdErrorEvent adErrorEvent = new TVASTAdErrorEvent(adError);
+                        for (TVASTAdErrorListener listener : mErrorListeners) {
+                            listener.onAdError(adErrorEvent);
+                        }
+                    }
+                });
+                postbackTask.execute(0);
             }
-
-            @Override
-            public void onFailure(Exception error) {
-                TapItLog.d(TAG, "Postback:" + postbackUri + " failed.");
-                TVASTAdError adError = new TVASTAdError(AdErrorType.PLAY, AdErrorCode.VAST_INVALID_URL, error.getMessage());
-                TVASTAdErrorEvent adErrorEvent = new TVASTAdErrorEvent(adError);
-                for (TVASTAdErrorListener listener : mErrorListeners) {
-                    listener.onAdError(adErrorEvent);
-                }
-            }
-        });
-        postbackTask.execute(0);
+        }
     }
 }

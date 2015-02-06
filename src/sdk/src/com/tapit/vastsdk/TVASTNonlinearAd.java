@@ -3,6 +3,7 @@ package com.tapit.vastsdk;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 
 public class TVASTNonlinearAd implements Parcelable {
@@ -25,7 +26,7 @@ public class TVASTNonlinearAd implements Parcelable {
     private String mClickThrough;
     private String mClickTracking;
     private String mClickTrackingId;
-    private HashMap<String, String> mTrackingEvents;
+    private HashMap<String, ArrayList<String>> mTrackingEvents;
 
     public String getAdId() {
         return mAdId;
@@ -171,11 +172,11 @@ public class TVASTNonlinearAd implements Parcelable {
         mClickTrackingId = clickTrackingId;
     }
 
-    public HashMap<String, String> getTrackingEvents() {
+    public HashMap<String, ArrayList<String>> getTrackingEvents() {
         return mTrackingEvents;
     }
 
-    protected void setTrackingEvents(HashMap<String, String> trackingEvents) {
+    protected void setTrackingEvents(HashMap<String, ArrayList<String>> trackingEvents) {
         mTrackingEvents = trackingEvents;
     }
 
@@ -248,12 +249,13 @@ public class TVASTNonlinearAd implements Parcelable {
             nonlinearAd.mClickThrough = source.readString();
             nonlinearAd.mClickTracking = source.readString();
             nonlinearAd.mClickTrackingId = source.readString();
-            nonlinearAd.mTrackingEvents = new HashMap<String, String>();
+            nonlinearAd.mTrackingEvents = new HashMap<String, ArrayList<String>>();
             int size = source.readInt();
             for (int i = 0; i < size; i++) {
                 String key = source.readString();
-                String value = source.readString();
-                nonlinearAd.mTrackingEvents.put(key, value);
+                ArrayList<String> internalList = new ArrayList<String>();
+                source.readList(internalList,null);
+                nonlinearAd.mTrackingEvents.put(key, internalList);
             }
             return nonlinearAd;
         }
@@ -287,7 +289,7 @@ public class TVASTNonlinearAd implements Parcelable {
         dest.writeInt(mTrackingEvents.size());
         for (String key : mTrackingEvents.keySet()) {
             dest.writeString(key);
-            dest.writeString(mTrackingEvents.get(key));
+            dest.writeList(mTrackingEvents.get(key));
         }
     }
 }
