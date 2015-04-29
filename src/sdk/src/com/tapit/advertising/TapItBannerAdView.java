@@ -148,7 +148,7 @@ public final class TapItBannerAdView extends ViewGroup {
                 }
             }
         });
-        final AdRequestUrlBuilder requestUrlBuilder = new AdRequestUrlBuilder(adRequest, getContext());
+        final AdRequestUrlBuilder requestUrlBuilder = new AdRequestUrlBuilder(adRequest, getContext(),RequestType.BANNER);
         requestUrlBuilder.setLocation(latitude, longitude);
         requestUrlBuilder.setContainerDetails(320, 50, AdRequestUrlBuilder.Orientation.NONE);
         adManager.submitRequest(getContext(), requestUrlBuilder);
@@ -160,6 +160,7 @@ public final class TapItBannerAdView extends ViewGroup {
         setupLegacyListener();
 
         AdRequest legacyAdRequest = AdRequestImpl.asImplAdRequest(adRequest);
+        legacyAdRequest.getCustomParameters().put("rtype",RequestType.BANNER.getRequestType());
         if (latitude != null) {
             legacyAdRequest.setLatitude(String.valueOf(latitude));
         }

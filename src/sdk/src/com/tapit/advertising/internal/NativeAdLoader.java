@@ -75,7 +75,7 @@ public class NativeAdLoader implements TapItAdLoader<TapItNativeAd> {
             }
         };
 
-        final AdRequestUrlBuilder requestUrlBuilder = new AdRequestUrlBuilder(request, context);
+        final AdRequestUrlBuilder requestUrlBuilder = new AdRequestUrlBuilder(request, context, RequestType.NATIVE);
         requestUrlBuilder.setMaxAdsRequested(maxAdsRequested);
         adManager.submitRequest(context, requestUrlBuilder);
     }

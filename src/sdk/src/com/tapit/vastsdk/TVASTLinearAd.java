@@ -80,15 +80,10 @@ public class TVASTLinearAd implements Parcelable {
             if (mediaFile.getMimeType().equalsIgnoreCase("video/mp4") &&
                     !mediaFile.getURIMediaFile().trim().endsWith(".m3u8") &&
                     mediaFile.getURIMediaFile().trim().startsWith("http") ){
-                if(selectedBitrate < mediaFile.getBitrate() &&
-                        mediaFile.getBitrate() <= 1500 && mediaFile.getWidth() <= 480){
+                if(selectedBitrate < mediaFile.getBitrate()){
                     selectedBitrate = mediaFile.getBitrate();
                     mediaFileSelected = true;
                     selectedIndex = index;
-                } else if(mediaFile.getWidth() > 480){
-                    Log.d(TAG,"This Media URL skipped because the width is greater than 480: "+mediaFile.getURIMediaFile());
-                } else if (mediaFile.getBitrate() > 1500){
-                    Log.d(TAG,"This Media URL skipped because the bitrate is greater than 1500: "+mediaFile.getURIMediaFile());
                 }
             }
 

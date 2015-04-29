@@ -211,7 +211,7 @@ public final class AdRequestImpl implements TapItAdRequest {
             tvastRequest.setRequestParameter("videotype", request.getPlacementType().toString());
         }
         tvastRequest.setRequestParameter("cid", request.getCustomParameters().get("cid"));
-
+        tvastRequest.getCustomParameters().put("rtype",RequestType.VIDEO.getRequestType());
         return tvastRequest;
     }
 }

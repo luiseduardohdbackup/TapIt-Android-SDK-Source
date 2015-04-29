@@ -8,6 +8,7 @@ import android.os.*;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
+import com.tapit.core.TapItLog;
 
 public class TapItAdActivity extends Activity {
     private static final String TAG = "TapIt";
@@ -82,6 +83,15 @@ public class TapItAdActivity extends Activity {
         contentView.addView(wrapperView, lp);
 
         setContentView(contentView);
+    }
+
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        TapItLog.d(TAG, "onPause");
+        isContentStarted = false;
+        setCloseButtonVisible(false);
     }
 
     public void setCloseButtonVisible(boolean isVisible) {

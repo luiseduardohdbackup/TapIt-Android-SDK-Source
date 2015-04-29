@@ -30,13 +30,13 @@ public class TVASTAd implements Parcelable {
     private ArrayList<TVASTCreative> mCreatives;
     private double mDuration;
 
-    private boolean mBrokenWrapperResponse;
+    private boolean mNoCreativeOrInvalidResponse;
     public TVASTAd() {
         mIs3rdPartyAd = false;
         mMediaFileIndex = -1;
         mMediaUrl = "";
         mDuration = 0;
-        mBrokenWrapperResponse = false;
+        mNoCreativeOrInvalidResponse = false;
     }
 
     public TVASTAdType getAdType() {
@@ -189,12 +189,12 @@ public class TVASTAd implements Parcelable {
         mDuration = duration;
     }
 
-    public boolean ismBrokenWrapperResponse() {
-        return mBrokenWrapperResponse;
+    public boolean getIsNoCreativeOrInvalidResponse() {
+        return mNoCreativeOrInvalidResponse;
     }
 
-    public void setmBrokenWrapperResponse(boolean mBrokenWrapperResponse) {
-        this.mBrokenWrapperResponse = mBrokenWrapperResponse;
+    public void setNoCreativeOrInvalidResponse(boolean mNoCreativeOrInvalidResponse) {
+        this.mNoCreativeOrInvalidResponse = mNoCreativeOrInvalidResponse;
     }
 
     @Override
@@ -252,7 +252,7 @@ public class TVASTAd implements Parcelable {
             trmaAd.mCreatives = new ArrayList<TVASTCreative>();
             source.readTypedList(trmaAd.mCreatives, TVASTCreative.CREATOR);
             trmaAd.mDuration = source.readFloat();
-            trmaAd.mBrokenWrapperResponse = source.readInt() == 1;
+            trmaAd.mNoCreativeOrInvalidResponse = source.readInt() == 1;
             return trmaAd;
         }
     };
@@ -282,7 +282,7 @@ public class TVASTAd implements Parcelable {
         dest.writeList(mImpressions);
         dest.writeTypedList(mCreatives);
         dest.writeDouble(mDuration);
-        dest.writeInt(mBrokenWrapperResponse ? 1 : 0);
+        dest.writeInt(mNoCreativeOrInvalidResponse ? 1 : 0);
     }
 }
 

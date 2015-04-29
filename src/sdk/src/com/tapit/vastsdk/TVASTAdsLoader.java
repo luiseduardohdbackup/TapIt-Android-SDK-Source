@@ -110,7 +110,8 @@ public class TVASTAdsLoader {
 
                 if (!hasContents) {
                     mRootErrorUri = "No creatives available";
-                    trmaAd.setmBrokenWrapperResponse(true);
+                    if(trmaAd != null)
+                        trmaAd.setNoCreativeOrInvalidResponse(true);
                 }
             } finally {
                 inStream.close();
@@ -840,8 +841,8 @@ public class TVASTAdsLoader {
                 trmaAd = vastParser.parseVAST(stream, trmaAd);
 
                 if (trmaAd != null) {
-                    if(trmaAd.ismBrokenWrapperResponse())
-                        throw new XmlPullParserException("Not a valid wrapper response.");
+                    if(trmaAd.getIsNoCreativeOrInvalidResponse())
+                        throw new XmlPullParserException("Not a valid response.");
                     if(trmaAd.getIs3rdPartyAd()) {
                         stream.close();
                         stream = null;

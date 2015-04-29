@@ -26,7 +26,8 @@ public class VideoInterstitialAdImpl extends AbstractStatefulAd implements TapIt
     private TapItVideoInterstitialAdListener listener = null;
     private TVASTVideoAdsManager videoAdsManager = null;
     private DisplayMetrics metrics = null;
-
+    private final String MIN_DISPLAY = "min_display";
+    private int minDisplay = 0;
 
     /**
      * Factory method which generates Video Interstitial Ad objects.
@@ -64,6 +65,13 @@ public class VideoInterstitialAdImpl extends AbstractStatefulAd implements TapIt
 
         setContext(context);
         adRequest = request;
+        if(request.getCustomParameters()!=null && request.getCustomParameters().containsKey(MIN_DISPLAY)){
+            try {
+                minDisplay = Integer.parseInt(request.getCustomParameters().get(MIN_DISPLAY));
+            } catch (NumberFormatException e) {
+                TapItLog.e(TAG,"Error occurred while converting min_display value to String. "+minDisplay);
+            }
+        }
         metrics = context.getResources().getDisplayMetrics();
 
         videoLoader = new TVASTAdsLoader(context);
@@ -99,7 +107,7 @@ public class VideoInterstitialAdImpl extends AbstractStatefulAd implements TapIt
             private VastPlayerView videoView = null;
             private TVASTAdView staticAdView = null;
             // stub code to enable forcing user to watch entire video
-            private boolean canCloseVideo = true; // set to false to force user to watch entire video
+            private boolean canCloseVideo = false; // set to false to force user to watch entire video
             private TVASTPlayer.TVASTAdPlayerListener playerListener;
 
             @Override
@@ -121,6 +129,7 @@ public class VideoInterstitialAdImpl extends AbstractStatefulAd implements TapIt
                     public boolean onTouch(View v, MotionEvent event) {
                         if(event.getAction() == MotionEvent.ACTION_UP){
 //                        TapItLog.d(TAG, "AdActivityContentWrapper -> videoView -> layout.onTouch");
+                            canCloseVideo = true;
                             showAdClickDestination();
                         }
 
@@ -156,6 +165,7 @@ public class VideoInterstitialAdImpl extends AbstractStatefulAd implements TapIt
                     }
                     staticAdView.setVisibility(View.VISIBLE);
                     videoView.setVisibility(View.GONE);
+                    canCloseVideo = true;
                 }
                 else {
                     activity.close();
@@ -247,8 +257,13 @@ public class VideoInterstitialAdImpl extends AbstractStatefulAd implements TapIt
 
                     @Override
                     public void onVideoProgress(TVASTPlayer player, int current, int max) {
-                        // noop
-//                        TapItLog.d(TAG, "onVideoProgress(" + current + ", " + max + ")");
+                        //This is to support a hidden feature for BrandMe. So they can force user to watch an ad for
+                        // given amount of seconds before the close button appears.
+                        minDisplay = minDisplay < 0 ? max : minDisplay;
+                        if(current >= minDisplay) {
+                            canCloseVideo = true;
+                            activity.setCloseButtonVisible(true);
+                        }
                     }
 
                     @Override

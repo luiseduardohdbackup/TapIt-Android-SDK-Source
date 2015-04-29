@@ -32,10 +32,12 @@ public class AdRequestUrlBuilder implements WebUtils.UrlBuilder {
     private Orientation orientation = Orientation.NONE;
     private DeviceCapabilities.AdvertisingInfo advertisingInfo = null;
     private int maxAdsRequested = 1;
+    private String requestType = null;
 
-    public AdRequestUrlBuilder(TapItAdRequest request, Context context) {
+    public AdRequestUrlBuilder(TapItAdRequest request, Context context, RequestType requestType) {
         this.request = request;
         this.context = context;
+        this.requestType = requestType.getRequestType();
     }
 
     public AdRequestUrlBuilder setLocation(Double lat, Double lon) {
@@ -108,7 +110,7 @@ public class AdRequestUrlBuilder implements WebUtils.UrlBuilder {
         if (maxAdsRequested > 1) {
             url += "&mres=" + maxAdsRequested;
         }
-
+        url += "&rtype=" + requestType;
         return url;
     }
 

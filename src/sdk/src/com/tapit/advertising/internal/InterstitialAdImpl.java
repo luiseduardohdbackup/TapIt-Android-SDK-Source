@@ -51,6 +51,7 @@ public final class InterstitialAdImpl extends AbstractStatefulAd implements TapI
         this.request = request;
 
         legacyInterstitialAd = new AdInterstitialView(context, AdRequestImpl.asImplAdRequest(request));
+        legacyInterstitialAd.getCustomParameters().put("rtype",RequestType.INTERSTITIAL.getRequestType());
     }
 
 

@@ -43,7 +43,7 @@ import android.widget.FrameLayout;
  * Viewer of advertising.
  */
 public abstract class AdViewCore extends WebView {
-    public static final String VERSION = "2.1.1";
+    public static final String VERSION = "2.1.4";
     public static final String TAG = "TapIt";
 
     private static final long AD_DEFAULT_RELOAD_PERIOD = 120000; // milliseconds
@@ -691,6 +691,11 @@ public abstract class AdViewCore extends WebView {
 
                             if (jsonObject.has("mraid")) {
                                 mraid = true;
+                            }
+
+                            if(adWidth == -1 || adHeight == -1){
+                                data = null;
+                                throw new Exception("adHeight or adWidth is missing.");
                             }
                         }
                                         

@@ -1,3 +1,13 @@
+2.1.4
+* Fixed intermittent NullPointerException when closing Interstitial Ad via back button
+* Support higher bitrate in videos
+
+2.1.3
+* Support multiple impression urls for Native
+
+2.1.2
+* Improved video media handling when multiple formats are received
+
 2.1.1
 * Various video bug fixes and performance improvements
 

@@ -1,6 +1,7 @@
 package com.tapit.advertising.internal;
 
 import android.content.Context;
+import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.StateListDrawable;
@@ -108,7 +109,14 @@ public class InterstitialBaseView extends FrameLayout {
             TapItLog.e(TAG, "Failed to load close button drawable: " + e);
         }
         ImageButton closeButton = new ImageButton(getContext());
-        closeButton.setImageDrawable(states);
+        Resources resources = getContext().getResources();
+        final int resourceId = resources.getIdentifier("close_button","drawable",getContext().getPackageName());
+        if(resourceId > 0 ){
+            Drawable d = getResources().getDrawable(resourceId);
+            closeButton.setImageDrawable(d);
+        }else {
+            closeButton.setImageDrawable(states);
+        }
         closeButton.setBackgroundColor(Color.TRANSPARENT);
 
 //        closeButton.setOnClickListener(new View.OnClickListener() {

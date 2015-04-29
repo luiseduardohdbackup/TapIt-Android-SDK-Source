@@ -5,6 +5,7 @@ import android.view.View;
 import com.tapit.advertising.TapItAdRequest;
 import com.tapit.advertising.TapItNativeAd;
 import com.tapit.core.TapItLog;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -66,7 +67,7 @@ public class NativeAdImpl implements TapItNativeAd {
 
 //        final AdManager adManager = buildMockAdManager();
         final AdManager adManager = buildAdManager();
-        final AdRequestUrlBuilder requestUrlBuilder = new AdRequestUrlBuilder(adRequest, context);
+        final AdRequestUrlBuilder requestUrlBuilder = new AdRequestUrlBuilder(adRequest, context, RequestType.NATIVE);
 //        requestUrlBuilder.setLocation(latitude, longitude);
         state = State.LOADING;
         adManager.submitRequest(context, requestUrlBuilder);
@@ -145,28 +146,38 @@ public class NativeAdImpl implements TapItNativeAd {
                     impressionTracked = true;
                     try {
                         JSONObject json = new JSONObject(getAdData());
-                        String pixelUrl = json.optString("impressionurl");
-                        if (pixelUrl != null) {
-                            WebUtils.asyncHttpRequest(context, pixelUrl, new WebUtils.AsyncHttpResponseListener() {
-                                @Override
-                                public void asyncResponse(String response) {
-                                    // noop - we're not expecting any content in the response...
-                                }
-
-                                @Override
-                                public void asyncError(Throwable throwable) {
-                                    TapItLog.e(TAG, "failed to track impression", throwable);
-                                }
-                            });
-                        }
-                        else {
-                            // noop - impression tracking is handled as part of the native ad content
+                        JSONArray impressionUrlArray = json.optJSONArray("impressionurls");
+                        if(impressionUrlArray != null) {
+                            for (int i = 0; i < impressionUrlArray.length(); i++) {
+                                triggerImpressionUrls(impressionUrlArray.getString(i));
+                            }
+                        }else{
+                            String pixelUrl = json.optString("impressionurl");
+                            if (pixelUrl != null) {
+                                triggerImpressionUrls(pixelUrl);
+                            }
                         }
                     } catch (JSONException e) {
                         TapItLog.e(TAG, "failed to track impression", e);
                     }
                 }
             }
+        }
+    }
+
+    private void triggerImpressionUrls(final String impressionUrl) {
+        if (impressionUrl != null) {
+            WebUtils.asyncHttpRequest(context, impressionUrl, new WebUtils.AsyncHttpResponseListener() {
+                @Override
+                public void asyncResponse(String response) {
+                    TapItLog.d(TAG, "Tracking impression: " + impressionUrl);
+                }
+
+                @Override
+                public void asyncError(Throwable throwable) {
+                    TapItLog.e(TAG, "failed to track impression: " + impressionUrl, throwable);
+                }
+            });
         }
     }
 
