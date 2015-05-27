@@ -207,20 +207,21 @@ public class TVASTAdsLoader {
                     theAd.getImpressions().add(impressionUri);
                 } else if (name.equals("Creatives")) {
                     ArrayList<TVASTCreative> creatives = readCreatives(parser, theAd.getCreatives());
-                    theAd.setCreatives(creatives);
+                    if(!creatives.isEmpty()) {
+                        theAd.setCreatives(creatives);
 
-                    TVASTLinearAd linearAd = creatives.get(0).getLinearAd();
-                    if (linearAd.getSelectedMediaIndex() > -1) {
-                        TVASTMediaFile mediaFile = linearAd.getMediaFiles().get(linearAd.getSelectedMediaIndex());
-                        theAd.setMediaUrl(mediaFile.getURIMediaFile());
-                        theAd.setCreativeWidth(mediaFile.getWidth());
-                        theAd.setCreativeHeight(mediaFile.getHeight());
-                    } else {
-                        theAd.setMediaUrl("");
+                        TVASTLinearAd linearAd = creatives.get(0).getLinearAd();
+                        if (linearAd!= null && linearAd.getSelectedMediaIndex() > -1) {
+                            TVASTMediaFile mediaFile = linearAd.getMediaFiles().get(linearAd.getSelectedMediaIndex());
+                            theAd.setMediaUrl(mediaFile.getURIMediaFile());
+                            theAd.setCreativeWidth(mediaFile.getWidth());
+                            theAd.setCreativeHeight(mediaFile.getHeight());
+                            double duration = parseTimeString(linearAd.getDuration());
+                            theAd.setDuration(duration);
+                        } else {
+                            theAd.setMediaUrl("");
+                        }
                     }
-
-                    double duration = parseTimeString(linearAd.getDuration());
-                    theAd.setDuration(duration);
                 } else {
                     skip(parser);
                 }
@@ -304,28 +305,34 @@ public class TVASTAdsLoader {
                             creative.setLinearAd(linearAd);
                         } else if (innername.equals("CompanionAds")) {
                             List<TVASTCompanionAd> companionAds = readCompanionAds(parser);
-                            creative.setCompanionAd(companionAds);
+                            if(companionAds!=null && !companionAds.isEmpty())
+                                creative.setCompanionAd(companionAds);
                         } else if (innername.equals("NonLinearAds")) {
                             List<TVASTNonlinearAd> nonLinearAds = readNonLinearAds(parser);
+                            if(nonLinearAds!=null && !nonLinearAds.isEmpty()) {
+                                TVASTNonlinearAd theEmptyNonlinear = nonLinearAds.get(nonLinearAds.size() - 1);
+                                Map<String, ArrayList<String>> nonLinearTrackingEvents = theEmptyNonlinear.getTrackingEvents();
+                                if (nonLinearTrackingEvents != null) {
+                                    creative.setNonlinearAdsTrackingEvents(nonLinearTrackingEvents);
+                                    nonLinearAds.remove(theEmptyNonlinear);
+                                }
 
-                            TVASTNonlinearAd theEmptyNonlinear = nonLinearAds.get(nonLinearAds.size() - 1);
-                            Map<String, ArrayList<String>> nonLinearTrackingEvents = theEmptyNonlinear.getTrackingEvents();
-                            if (nonLinearTrackingEvents != null) {
-                                creative.setNonlinearAdsTrackingEvents(nonLinearTrackingEvents);
-                                nonLinearAds.remove(theEmptyNonlinear);
+                                creative.setNonlinearAds(nonLinearAds);
                             }
-
-                            creative.setNonlinearAds(nonLinearAds);
                         } else {
                             skip(parser);
                         }
                     }
-
-                    if (creativeList.contains(creative))
-                        creativeList.set(i, creative);
-                    else
-                        creativeList.add(creative);
-                    i++;
+                    if(creative.getLinearAd() != null || creative.getCompanionAds() != null
+                            || creative.getNonlinearAds() != null) {
+                        if (creativeList.contains(creative)) {
+                            int index = creativeList.indexOf(creative);
+                            if (index > -1)
+                                creativeList.set(index, creative);
+                        } else
+                            creativeList.add(creative);
+                        i++;
+                    }
                 } else {
                     skip(parser);
                 }

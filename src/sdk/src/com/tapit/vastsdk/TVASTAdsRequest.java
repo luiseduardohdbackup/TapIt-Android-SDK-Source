@@ -1,6 +1,7 @@
 package com.tapit.vastsdk;
 
 import android.content.Context;
+import com.tapit.advertising.Config;
 import com.tapit.advertising.internal.DeviceCapabilities;
 import com.tapit.core.TapItLog;
 
@@ -34,7 +35,7 @@ public class TVASTAdsRequest {
     private static final String PARAMETER_CARRIER = "carrier";
     public final static String PARAMETER_DEVICE_ID = "udid";
 
-    private String mAdServerURL = "http://r.tapit.com/adrequest.php";
+    private String mAdServerURL = Config.REQUEST_BASE_URL;
 
     public TVASTAdsRequest(String zone) {
         setZone(zone);

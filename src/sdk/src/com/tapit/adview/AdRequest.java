@@ -5,6 +5,7 @@ import java.net.URLEncoder;
 import java.util.*;
 
 import android.content.Context;
+import com.tapit.advertising.Config;
 import com.tapit.advertising.internal.DeviceCapabilities;
 import com.tapit.core.TapItLog;
 
@@ -31,7 +32,7 @@ public class AdRequest {
     private static final String PARAMETER_CARRIER_ID = "carrier_id";
     public final static String PARAMETER_DEVICE_ID = "udid";
 
-    private String adserverURL = "http://r.tapit.com/adrequest.php";
+    private String adserverURL = Config.REQUEST_BASE_URL;
 
     private Map<String, String> customParameters = new HashMap<String, String>();
 

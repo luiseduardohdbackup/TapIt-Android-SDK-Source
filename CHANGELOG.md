@@ -1,3 +1,6 @@
+2.1.5
+* Fixed parsing issue for response with multiple creatives but with no data.
+
 2.1.4
 * Fixed intermittent NullPointerException when closing Interstitial Ad via back button
 * Support higher bitrate in videos

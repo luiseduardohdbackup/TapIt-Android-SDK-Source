@@ -25,7 +25,7 @@ public final class Config {
         Properties prop = new Properties();
 
         String t_env = "prod";
-        String t_sdk_v = "2.1.4";
+        String t_sdk_v = "2.1.5";
         String t_core_req = "1.3.2";
         String t_request_base_url = "http://r.tapit.com/adrequest.php";
         try {
